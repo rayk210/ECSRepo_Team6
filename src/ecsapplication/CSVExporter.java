@@ -12,7 +12,7 @@ public class CSVExporter {
 		// Creates table model containing data and column names
         TableModel model = table.getModel();
         
-        // Open an file output stream wrapped in a try block
+        // Open a file output stream wrapped in a try block
         try (FileWriter csv = new FileWriter(filePath)) {
 
         	// Writes the column name to CSV and separates values with a comma

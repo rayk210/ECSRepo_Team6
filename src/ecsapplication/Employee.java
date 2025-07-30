@@ -14,7 +14,12 @@ public class Employee {
     private List<Transaction> empTransaction;
     private Order order;
     
-    // Constructor
+    // Constructors
+    
+    public Employee() {
+    	
+    }
+    
 	public Employee(int empID, String empName, SkillClassification skillClassification,
 			List<Transaction> empTransaction, Order order) {
 		
@@ -29,6 +34,10 @@ public class Employee {
 
 	public int getEmpID() {
 		return empID;
+	}
+	
+	public void setEmpID(int empID) {
+		this.empID = empID;
 	}
 
 	public String getEmpName() {
@@ -73,11 +82,6 @@ public class Employee {
     
     @Override
     public String toString() {
-		return "Employee{" +
-		           "empID=" + empID +
-		           ", empName=" + empName +
-		           ", skillClassification=" + skillClassification +
-		           ", totalTransactions=" + (empTransaction != null ? empTransaction.size() : 0) +
-		           '}';
-	}
+		return empID + " - " + empName;
+    }
 }

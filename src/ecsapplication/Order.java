@@ -57,23 +57,23 @@ public class Order {
 	}
 	
 	public void confirmOrder() {
-		if (this.orderStatus == OrderStatus.CANCELLED) {
+		if (this.orderStatus == OrderStatus.Cancelled) {
 	        System.out.println("Order " + orderID + " has been cancelled");
 	        return;
 	    }
-		else if (this.orderStatus == OrderStatus.CONFIRMED) {
+		else if (this.orderStatus == OrderStatus.Confirmed) {
 	        System.out.println("Order " + orderID + " is already confirmed.");
 	        return;
 		}
 
 		else {
-			this.orderStatus = OrderStatus.CONFIRMED;
+			this.orderStatus = OrderStatus.Confirmed;
 			System.out.println("Order " + orderID + " confirmed.");
 		}
     }
 
     public void cancelOrder() {
-        this.orderStatus = OrderStatus.CANCELLED;
+        this.orderStatus = OrderStatus.Cancelled;
         System.out.println("Order " + orderID + " cancelled.");
     }
 

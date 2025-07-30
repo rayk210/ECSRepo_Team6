@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 public class Transaction {
 
-	
+	// Attributes
 	private int transactionID;
     private Employee employee;
     private Equipment equipment;
@@ -14,7 +14,7 @@ public class Transaction {
     private LocalDate expectedReturnDate;
     private String transactionStatus;
     
-    //Constructor
+    // Constructor
 	public Transaction(int transactionID, Employee employee, Equipment equipment, Order order, LocalDate orderDate,
 			LocalDate borrowDate, LocalDate expectedReturnDate, String transactionStatus) {
 		super();
