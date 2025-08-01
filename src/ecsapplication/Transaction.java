@@ -2,6 +2,8 @@ package ecsapplication;
 
 import java.time.LocalDate;
 
+import ecsapplication.enums.TransactionStatus;
+
 public class Transaction {
 
 	// Attributes
@@ -12,11 +14,12 @@ public class Transaction {
     private LocalDate orderDate;
     private LocalDate borrowDate;
     private LocalDate expectedReturnDate;
-    private String transactionStatus;
+    private LocalDate returnDate;
+    private TransactionStatus transactionStatus;
     
     // Constructor
 	public Transaction(int transactionID, Employee employee, Equipment equipment, Order order, LocalDate orderDate,
-			LocalDate borrowDate, LocalDate expectedReturnDate, String transactionStatus) {
+			LocalDate borrowDate, LocalDate expectedReturnDate, TransactionStatus transactionStatus) {
 		super();
 		this.transactionID = transactionID;
 		this.employee = employee;
@@ -29,6 +32,10 @@ public class Transaction {
 	}
 
 	// Getters
+	public int getTransactionID() {
+		return transactionID;
+	}
+
 	public Employee getEmployee() {
 		return employee;
 	}
@@ -40,15 +47,7 @@ public class Transaction {
 	public Order getOrder() {
 		return order;
 	}
-
-	public String getTransactionStatus() {
-		return transactionStatus;
-	}
-
-	public int getTransactionID() {
-		return transactionID;
-	}
-
+	
 	public LocalDate getOrderDate() {
 		return orderDate;
 	}
@@ -61,6 +60,22 @@ public class Transaction {
 		return expectedReturnDate;
 	}
 	
+	public TransactionStatus getTransactionStatus() {
+		return transactionStatus;
+	}
+	
+	public void setTransactionStatus(TransactionStatus transactionStatus) {
+		this.transactionStatus = transactionStatus;
+	}
+	
+	public LocalDate getReturnDate() {
+		return returnDate;
+	}
+	
+	public void setReturnDate(LocalDate returnDate) {
+		this.returnDate = returnDate;
+	}
+	
 	public String toString() {
         return "Transaction{" +
                 "transactionID=" + transactionID +
@@ -70,6 +85,7 @@ public class Transaction {
                 ", orderDate=" + orderDate +
                 ", borrowDate=" + borrowDate +
                 ", expectedReturnDate=" + expectedReturnDate +
+                ", returnDate=" + returnDate +
                 ", transactionStatus='" + transactionStatus + '\'' +
                 '}';
     }
