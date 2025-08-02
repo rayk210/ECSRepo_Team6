@@ -14,7 +14,7 @@ public class Equipment {
 	private EquipmentStatus status;
 	private SkillClassification requiredSkill;
 	
-	// Constructor
+	// Constructors
 	public Equipment(int equipmentID, String equipmentName, EquipmentCondition equipmentCondition,
 			EquipmentStatus status, SkillClassification requiredSkill) {
 		super();
@@ -23,6 +23,13 @@ public class Equipment {
 		this.equipmentCondition = equipmentCondition;
 		this.status = status;
 		this.requiredSkill = requiredSkill;
+	}
+	
+	public Equipment(int equipmentID, String equipmentName, EquipmentCondition equipmentCondition, EquipmentStatus status) {
+		this.equipmentID = equipmentID;
+		this.equipmentName = equipmentName;
+		this.equipmentCondition = equipmentCondition;
+		this.status = status;
 	}
 
 	// Getters and Setters
@@ -64,6 +71,11 @@ public class Equipment {
 
 	public void setRequiredSkill(SkillClassification requiredSkill) {
 		this.requiredSkill = requiredSkill;
+	}
+	
+	@Override
+	public Equipment clone() {
+		return new Equipment(this.equipmentID, this.equipmentName, this.equipmentCondition, this.status);
 	}
 	
 	@Override

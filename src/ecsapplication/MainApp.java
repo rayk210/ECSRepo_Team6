@@ -2,9 +2,7 @@ package ecsapplication;
 
 import java.awt.EventQueue;
 import java.sql.*;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -243,7 +241,7 @@ public class MainApp extends JFrame {
 	            return;
 	        }
 	        
-	        int equipmentID = (int) table.getValueAt(selectedRow, 1);
+	        int transactionID = (int) table.getValueAt(selectedRow, 0);
 	        
 	        // ask employee to input the condition of the equipment when returning
 	        EquipmentCondition condition = (EquipmentCondition) JOptionPane.showInputDialog(
@@ -262,16 +260,29 @@ public class MainApp extends JFrame {
 	        }
 	        
 	        // call returnEquipment from Employee class
-	        Transaction returnedTxn = employee.returnEquipment(equipmentID, condition);
+	        Transaction returnedTxn = employee.returnEquipment(transactionID, condition);
+	        
 	        if (returnedTxn == null) {
 	            JOptionPane.showMessageDialog(dialog, "Return failed. Equipment not found or already returned.");
 	            return;
 	        }
 	        
+	        // troubleshoot 
+	        System.out.println("=== Transaction Info Before DB Update ===");
+	        System.out.println("Transaction ID: " + returnedTxn.getTransactionID());
+	        System.out.println("Transaction Status: " + returnedTxn.getTransactionStatus());
+	        System.out.println("Return Date: " + returnedTxn.getReturnDate());
+	        System.out.println("Equipment ID: " + returnedTxn.getEquipment().getEquipmentID());
+	        System.out.println("Equipment Status: " + returnedTxn.getEquipment().getStatus());
+	        System.out.println("Equipment Condition: " + returnedTxn.getEquipment().getEquipmentCondition());
+
+	        
 	        Connection conn = null;
 	        try {
 	            conn = DBConnect.getConnection();
 	            conn.setAutoCommit(false);
+	            
+	            
 
 	            DBConnect.updateTransactionReturn(conn, returnedTxn);
 	            DBConnect.updateEquipment(conn, returnedTxn.getEquipment());
@@ -499,55 +510,41 @@ public class MainApp extends JFrame {
 
 
 	public void FillTable() {
-			//SQL string
-			String strSQL = "SELECT \r\n"
-				    + "  t.transactionID,\r\n"
-				    + "  e.empName AS employeeName,\r\n"
-				    + "  e.skillClassification AS employeeSkill,\r\n"
-				    + "  eq.equipmentName,\r\n"
-				    + "  eq.requiredSkill AS requiredSkill,\r\n"
-				    + "  eq.equipmentCondition,\r\n"
-				    + "  eq.equipStatus,\r\n"
-				    + "  o.orderDate,\r\n"
-				    + "  t.borrowDate,\r\n"
-				    + "  t.expectedReturnDate,\r\n"
-				    + "  t.transactionStatus,\r\n"
-				    + "  r.reminderDate,\r\n"
-				    + "  r.reminderMSG \r\n"
-				    + "FROM transaction t\r\n"
-				    + "JOIN employee e ON t.empID = e.empID\r\n"
-				    + "JOIN equipment eq ON t.equipmentID = eq.equipmentID\r\n"
-				    + "LEFT JOIN `order` o ON t.orderID = o.orderID\r\n"
-				    + "LEFT JOIN reminder r ON t.transactionID = r.transactionID;";
-			
-			
-			try (Connection conn = DBConnect.getConnection();
-			         Statement s = conn.createStatement();
-			         ResultSet rs = s.executeQuery(strSQL)) {
+		try (Connection conn = DBConnect.getConnection()) {
+	        List<Transaction> transactions = DBConnect.getAllTransactions(conn);
+	        
+	       
+	        String[] columnNames = {
+	            "Transaction ID", "Employee Name", "Employee Skill",
+	            "Equipment Name", "Required Skill", "Equipment Condition",
+	            "Order Date", "Borrow Date", "Expected Return Date",
+	            "Transaction Status"
+	        };
+	        
+	        // make a two dimensional data object for JTable from list of transactions
+	        Object[][] data = new Object[transactions.size()][columnNames.length];
+	        
+	        for (int i = 0; i < transactions.size(); i++) {
+	            Transaction t = transactions.get(i);
+	            data[i][0] = t.getTransactionID();
+	            data[i][1] = t.getEmployee().getEmpName();
+	            data[i][2] = t.getEmployee().getSkillClassification().name();
+	            data[i][3] = t.getEquipment().getEquipmentName();
+	            data[i][4] = t.getEquipment().getRequiredSkill().name();
+	            data[i][5] = t.getEquipment().getEquipmentCondition().name();
+	            data[i][6] = t.getOrder() != null ? t.getOrder().getOrderDate() : null;
+	            data[i][7] = t.getBorrowDate();
+	            data[i][8] = t.getExpectedReturnDate();
+	            data[i][9] = t.getTransactionStatus().name();
+	        }
+	        
+	        // Set new model to JTable
+	        DefaultTableModel model = new DefaultTableModel(data, columnNames);
+	        tblEmployee.setModel(model);
 
-			        ResultSetMetaData metadata = rs.getMetaData();
-			        int columnCount = metadata.getColumnCount();
-
-			        Vector<String> columnNames = new Vector<>();
-			        for (int column = 1; column <= columnCount; column++) {
-			            columnNames.add(metadata.getColumnLabel(column));
-			        }
-
-			        Vector<Vector<Object>> data = new Vector<>();
-			        while (rs.next()) {
-			            Vector<Object> vector = new Vector<>();
-			            for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
-			                vector.add(rs.getObject(columnIndex));
-			            }
-			            data.add(vector);
-			        }
-
-			        DefaultTableModel model = new DefaultTableModel(data, columnNames);
-			        tblEmployee.setModel(model);
-
-			    } catch (Exception e) {
-			        e.printStackTrace();
-			        System.out.println("Could not connect to the database");
-			    }
-	}
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        System.out.println("Failed to load transactions from DB");
+	    }
+	}			
 }

@@ -82,11 +82,13 @@ public class Employee {
 	public Transaction checkOut(Equipment equipment) {
 	    LocalDate today = LocalDate.now();
 	    LocalDate expectedReturn = today.plusWeeks(7);
+	    
+	    Equipment equipmentCopy = equipment.clone();
 
 	    Transaction transaction = new Transaction(
 	        0,
 	        this,        // this employee
-	        equipment,
+	        equipmentCopy,
 	        null,
 	        null,      // orderDate
 	        today,      // borrowDate
@@ -105,10 +107,9 @@ public class Employee {
     public Transaction returnEquipment(int transactionID, EquipmentCondition condition) {
     	
     	for(Transaction txn : empTransaction) {
-    		Equipment eq = txn.getEquipment();
     		
     		// ensures that the equipment being returned is indeed borrowed 
-    		if (eq.getEquipmentID() == transactionID && txn.getTransactionStatus() == TransactionStatus.Borrowed) {
+    		if (txn.getTransactionID() == transactionID && txn.getTransactionStatus() == TransactionStatus.Borrowed) {
     			LocalDate today = LocalDate.now();
     			
     			// set return date and change transaction status to returned
@@ -116,6 +117,7 @@ public class Employee {
     			txn.setTransactionStatus(TransactionStatus.Returned);
     			
     			// change equipment status to available
+    			Equipment eq = txn.getEquipment();
     			eq.setStatus(EquipmentStatus.Available);
     			// change equipments condition
     			eq.setEquipmentCondition(condition);

@@ -1,6 +1,7 @@
 package ecsapplication;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -236,11 +237,11 @@ public class DBConnect {
 	
 	// update transaction status to returned and set return date
 	public static void updateTransactionReturn(Connection conn, Transaction txn) throws SQLException {
-	    String sql = "UPDATE transaction SET returnDate = ?, transactionStatus = ? WHERE transactionID = ?";
+	    String strSQL = "UPDATE transaction SET transactionStatus = ?, returnDate = ? WHERE transactionID = ?";
 
-	    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-	        stmt.setDate(1, Date.valueOf(txn.getReturnDate()));
-	        stmt.setString(2, txn.getTransactionStatus().name());
+	    try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
+	        stmt.setString(1, txn.getTransactionStatus().name());
+	        stmt.setDate(2, Date.valueOf(txn.getReturnDate()));
 	        stmt.setInt(3, txn.getTransactionID());
 	        stmt.executeUpdate();
 	    }
@@ -257,5 +258,83 @@ public class DBConnect {
 	        stmt.executeUpdate();
 	    }
 	}
+	
+	public static List<Transaction> getAllTransactions(Connection conn) throws SQLException {
+	    List<Transaction> txns = new ArrayList<>();
 
+	    String sql = "SELECT t.transactionID, t.empID, t.equipmentID, t.orderID, t.returnDate, " +
+	             "t.borrowDate, t.expectedReturnDate, t.transactionStatus, " +
+	             "e.empName, e.skillClassification, " +
+	             "eq.equipmentName, eq.equipmentCondition, eq.equipStatus, eq.requiredSkill, " +
+	             "o.orderDate AS OrderDate, o.orderStatus, o.pickUpDate " +
+	             "FROM transaction t " +
+	             "JOIN employee e ON t.empID = e.empID " +
+	             "JOIN equipment eq ON t.equipmentID = eq.equipmentID " +
+	             "LEFT JOIN `order` o ON t.orderID = o.orderID " +
+	             "WHERE t.transactionStatus = 'Borrowed'";
+
+	    try (PreparedStatement stmt = conn.prepareStatement(sql);
+	         ResultSet rs = stmt.executeQuery()) {
+
+	        while (rs.next()) {
+	            // make Employee object
+	            Employee employee = new Employee(
+	                rs.getInt("empID"),
+	                rs.getString("empName"),
+	                SkillClassification.valueOf(rs.getString("skillClassification"))
+	                
+	            );
+
+	            // make Equipment object
+	            Equipment eq = new Equipment(
+	                rs.getInt("equipmentID"),
+	                rs.getString("equipmentName"),
+	                EquipmentCondition.valueOf(rs.getString("equipmentCondition")),
+	                EquipmentStatus.valueOf(rs.getString("equipStatus")),
+	                SkillClassification.valueOf(rs.getString("requiredSkill"))
+	            
+	            );
+
+	            // make Order object, if exists
+	            Order order = null;
+	            int orderID = rs.getInt("orderID");
+	            if (!rs.wasNull()) {
+	                Equipment eqForOrder = eq;  
+	                Employee empForOrder = null; 
+	                
+	                LocalDate orderDate = rs.getDate("orderOrderDate") != null
+	                    ? rs.getDate("orderOrderDate").toLocalDate() : null;
+	                
+	                OrderStatus orderStatus = rs.getString("orderStatus") != null
+	                    ? OrderStatus.valueOf(rs.getString("orderStatus")) : null;
+	                
+	                LocalDate pickUpDate = rs.getDate("pickUpDate") != null
+	                    ? rs.getDate("pickUpDate").toLocalDate() : null;
+
+	                order = new Order(orderID, eqForOrder, empForOrder, orderDate, orderStatus, pickUpDate, null);
+	            }
+
+	            // Transaction object
+	            Transaction txn = new Transaction(
+	                rs.getInt("transactionID"),
+	                employee,
+	                eq,
+	                order,
+	                rs.getDate("orderDate") != null ? rs.getDate("orderDate").toLocalDate() : null,
+	                rs.getDate("borrowDate") != null ? rs.getDate("borrowDate").toLocalDate() : null,
+	                rs.getDate("expectedReturnDate") != null ? rs.getDate("expectedReturnDate").toLocalDate() : null,
+	                TransactionStatus.valueOf(rs.getString("transactionStatus"))
+	            );
+
+	            // set returnDate if exists
+	            if (rs.getDate("returnDate") != null) {
+	                txn.setReturnDate(rs.getDate("returnDate").toLocalDate());
+	            }
+
+	            txns.add(txn);
+	        }
+	    }
+
+	    return txns;
+	}
 }
