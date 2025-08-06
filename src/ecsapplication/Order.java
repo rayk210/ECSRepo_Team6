@@ -14,7 +14,28 @@ public class Order {
     private LocalDate pickUpDate;
     private Transaction transaction;
     
-    // Constructor
+    // Constructors
+    public Order(int orderID, Employee employee, Equipment equipment, LocalDate orderDate, OrderStatus orderStatus) {
+        this.orderID = orderID;
+        this.employee = employee;
+        this.equipment = equipment;
+        this.orderDate = orderDate;
+        this.orderStatus = orderStatus;
+        this.pickUpDate = null;
+        this.transaction = null;
+    }
+    
+    public Order(int orderID, Employee employee, Equipment equipment, LocalDate orderDate,
+            OrderStatus orderStatus, LocalDate pickUpDate) {
+    	this.orderID = orderID;
+    	this.employee = employee;
+    	this.equipment = equipment;
+    	this.orderDate = orderDate;
+    	this.orderStatus = orderStatus;
+    	this.pickUpDate = pickUpDate;
+    	this.transaction = null;
+    }
+    
 	public Order(int orderID, Equipment equipment, Employee employee, LocalDate orderDate, OrderStatus orderStatus,
 			LocalDate pickUpDate, Transaction transaction) {
 		
@@ -70,11 +91,6 @@ public class Order {
 			this.orderStatus = OrderStatus.Confirmed;
 			System.out.println("Order " + orderID + " confirmed.");
 		}
-    }
-
-    public void cancelOrder() {
-        this.orderStatus = OrderStatus.Cancelled;
-        System.out.println("Order " + orderID + " cancelled.");
     }
 
 	@Override

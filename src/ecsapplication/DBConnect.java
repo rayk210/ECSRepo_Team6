@@ -44,12 +44,12 @@ public class DBConnect {
 	
 	public static List<Transaction> getTransactionsByEmployeeID(Connection conn, int empID) throws SQLException {
 	    List<Transaction> txns = new ArrayList<>();
-	    String sql = "SELECT t.transactionID, t.empID, t.equipmentID, t.orderID, t.borrowDate, t.expectedReturnDate, t.returnDate, t.transactionStatus, " +
+	    String strSQL = "SELECT t.transactionID, t.empID, t.equipmentID, t.orderID, t.borrowDate, t.expectedReturnDate, t.returnDate, t.transactionStatus, " +
 	                 "e.equipmentName, e.equipmentCondition, e.requiredSkill, e.equipStatus " +
 	                 "FROM transaction t JOIN equipment e ON t.equipmentID = e.equipmentID " +
 	                 "WHERE t.empID = ?";
 
-	    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	    try (PreparedStatement pstmt = conn.prepareStatement(strSQL)) {
 	        pstmt.setInt(1, empID);
 	        ResultSet rs = pstmt.executeQuery();
 
@@ -199,7 +199,32 @@ public class DBConnect {
 	    return list;
 	}
 	
-	// Used by openCheckoutDialog method in mainapp to get available equipment 
+	// Get all equipment
+	public static List<Equipment> getAllEquipment(Connection conn) throws SQLException {
+	    List<Equipment> equipmentList = new ArrayList<>();
+
+	    String query = "SELECT equipmentID, equipmentName, equipStatus, requiredSkill FROM equipment";
+	    try (PreparedStatement stmt = conn.prepareStatement(query);
+	         ResultSet rs = stmt.executeQuery()) {
+
+	        while (rs.next()) {
+	            int equipmentID = rs.getInt("equipmentID");
+	            String equipmentName = rs.getString("equipmentName");
+	            String statusStr = rs.getString("equipStatus");
+	            String skillStr = rs.getString("requiredSkill");
+
+	            EquipmentStatus status = EquipmentStatus.fromString(statusStr);
+	            SkillClassification skill = SkillClassification.fromString(skillStr);
+
+	            Equipment equipment = new Equipment(equipmentID, equipmentName, status, skill);
+	            equipmentList.add(equipment);
+	        }
+	    }
+
+	    return equipmentList;
+	}
+	
+	// Used by openCheckoutDialog method in mainapp to get available equipment by skill
 	public static List<Equipment> getAvailableEquipmentBySkill(Connection conn, SkillClassification skill) throws SQLException {
 	    List<Equipment> equipmentList = new ArrayList<>();
 	    String strSQL = "SELECT equipmentID, equipmentName, equipmentCondition, equipStatus, requiredSkill " +
@@ -249,9 +274,9 @@ public class DBConnect {
 	
 	// update equipment status and equipment condition
 	public static void updateEquipment(Connection conn, Equipment eq) throws SQLException {
-	    String sql = "UPDATE equipment SET equipStatus = ?, equipmentCondition = ? WHERE equipmentID = ?";
+	    String strSQL = "UPDATE equipment SET equipStatus = ?, equipmentCondition = ? WHERE equipmentID = ?";
 
-	    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+	    try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
 	        stmt.setString(1, eq.getStatus().name());        // ENUM to string
 	        stmt.setString(2, eq.getEquipmentCondition().name());   // LocalDate to SQL date
 	        stmt.setInt(3, eq.getEquipmentID());
@@ -259,10 +284,126 @@ public class DBConnect {
 	    }
 	}
 	
+	// update equipment status
+	public static boolean updateEquipmentStatus(int equipmentID, EquipmentStatus status) {
+	    String strSQL = "UPDATE equipment SET equipStatus = ? WHERE equipmentID = ?";
+	    try (Connection conn = getConnection();
+	         PreparedStatement stmt = conn.prepareStatement(strSQL)) {
+	        stmt.setString(1, status.name());
+	        stmt.setInt(2, equipmentID);
+	        int affectedRows = stmt.executeUpdate();
+	        return affectedRows > 0;
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+	
+	// update order status in database
+	public static boolean updateOrderStatus(Connection conn, int orderID, OrderStatus status) throws SQLException {
+	    String sql = "UPDATE `order` SET orderStatus = ? WHERE orderID = ?";
+	    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+	        stmt.setString(1, status.name());
+	        stmt.setInt(2, orderID);
+	        return stmt.executeUpdate() > 0;
+	    }
+	}
+	
+	// inserts order into the database
+	public static boolean insertOrder(Order order) {
+	    String strSQL = "INSERT INTO `order` (empID, equipmentID, orderDate, orderStatus) VALUES (?, ?, ?, ?)";
+	    
+	    try (Connection conn = getConnection();
+	         PreparedStatement stmt = conn.prepareStatement(strSQL)) {
+	        
+	        stmt.setInt(1, order.getEmployee().getEmpID());
+	        stmt.setInt(2, order.getEquipment().getEquipmentID());
+	        stmt.setDate(3, java.sql.Date.valueOf(order.getOrderDate()));
+	        stmt.setString(4, order.getOrderStatus().name());
+	        
+	        int affectedRows = stmt.executeUpdate();
+	        return affectedRows > 0;
+	        
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+	
+	public static List<Order> getAllOrders(Connection conn) throws SQLException {
+	    List<Order> orders = new ArrayList<>();
+
+	    String sql = "SELECT o.orderID, o.empID, o.equipmentID, o.orderDate, o.orderStatus, o.pickUpDate, " +
+	                 "e.empName, eq.equipmentName " +
+	                 "FROM `order` o " +
+	                 "JOIN employee e ON o.empID = e.empID " +
+	                 "JOIN equipment eq ON o.equipmentID = eq.equipmentID";
+
+	    try (PreparedStatement stmt = conn.prepareStatement(sql);
+	         ResultSet rs = stmt.executeQuery()) {
+
+	        while (rs.next()) {
+	            int orderID = rs.getInt("orderID");
+	            int empID = rs.getInt("empID");
+	            int equipID = rs.getInt("equipmentID");
+	            Date orderDate = rs.getDate("orderDate");
+	            String statusStr = rs.getString("OrderStatus");
+	            Date pickupDate = rs.getDate("pickUpDate");
+
+	            // Make Employee and Equipment object from data
+	            Employee emp = new Employee(empID, rs.getString("empName"));
+	            Equipment equip = new Equipment(equipID, rs.getString("equipmentName"));
+
+	            Order order = new Order(orderID, emp, equip, orderDate.toLocalDate(),
+	                    OrderStatus.valueOf(statusStr), 
+	                    pickupDate != null ? pickupDate.toLocalDate() : null);
+
+	            orders.add(order);
+	        }
+	    }
+
+	    return orders;
+	}
+
+	
+	// gets equipment by ID
+	public static Equipment getEquipmentByID(Connection conn, int equipmentID) throws SQLException {
+	    String strSQL = "SELECT * FROM equipment WHERE equipmentID = ?";
+	    
+	    try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
+	        stmt.setInt(1, equipmentID);
+	        
+	        try (ResultSet rs = stmt.executeQuery()) {
+	            if (rs.next()) {
+	                return mapResultSetToEquipment(rs);
+	            } else {
+	                return null;
+	            }
+	        }
+	    }
+	}
+	
+	// functions to map a ResultSet row from the equipment table to an equipment object
+		public static Equipment mapResultSetToEquipment(ResultSet rs) throws SQLException {
+		    int equipmentID = rs.getInt("equipmentID");
+		    String equipmentName = rs.getString("equipmentName");
+		    
+		    // Change string from enum in DB to enum in Java
+		    EquipmentCondition equipmentCondition = EquipmentCondition.fromString(rs.getString("equipmentCondition"));
+		    SkillClassification requiredSkill = SkillClassification.fromString(rs.getString("requiredSkill"));
+		    EquipmentStatus equipmentStatus = EquipmentStatus.fromString(rs.getString("equipStatus"));
+		    
+		    
+		    Equipment equipment = new Equipment(equipmentID, equipmentName, equipmentCondition, equipmentStatus, requiredSkill);
+		    
+		    return equipment;
+		}
+	
+	// get all transactions
 	public static List<Transaction> getAllTransactions(Connection conn) throws SQLException {
 	    List<Transaction> txns = new ArrayList<>();
 
-	    String sql = "SELECT t.transactionID, t.empID, t.equipmentID, t.orderID, t.returnDate, " +
+	    String strSQL = "SELECT t.transactionID, t.empID, t.equipmentID, t.orderID, t.returnDate, " +
 	             "t.borrowDate, t.expectedReturnDate, t.transactionStatus, " +
 	             "e.empName, e.skillClassification, " +
 	             "eq.equipmentName, eq.equipmentCondition, eq.equipStatus, eq.requiredSkill, " +
@@ -273,7 +414,7 @@ public class DBConnect {
 	             "LEFT JOIN `order` o ON t.orderID = o.orderID " +
 	             "WHERE t.transactionStatus = 'Borrowed'";
 
-	    try (PreparedStatement stmt = conn.prepareStatement(sql);
+	    try (PreparedStatement stmt = conn.prepareStatement(strSQL);
 	         ResultSet rs = stmt.executeQuery()) {
 
 	        while (rs.next()) {
@@ -337,4 +478,52 @@ public class DBConnect {
 
 	    return txns;
 	}
+	
+	
+	// get orders by ID from database
+	public static Order getOrderByID(Connection conn, int orderID) {
+	    String sql = "SELECT * FROM `order` WHERE orderID = ?";
+	    
+	    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+	        stmt.setInt(1, orderID);
+	        try (ResultSet rs = stmt.executeQuery()) {
+	            if (rs.next()) {
+	                int employeeID = rs.getInt("empID");
+	                int equipmentID = rs.getInt("equipmentID");
+	                LocalDate orderDate = rs.getDate("orderDate").toLocalDate();
+	                
+	                Date pickUpDateSQL = rs.getDate("pickUpDate");
+	                LocalDate pickUpDate = (pickUpDateSQL != null) ? pickUpDateSQL.toLocalDate() : null;
+	                
+	                OrderStatus orderStatus = OrderStatus.fromString(rs.getString("orderStatus"));
+
+	                Employee employee = getEmployeeByID(conn, employeeID);
+	                Equipment equipment = getEquipmentByID(conn, equipmentID);
+
+	                return new Order(orderID, equipment, employee, orderDate, orderStatus, pickUpDate, null);
+	            }
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+	
+	// used to filter ordering equipment by equipment status AND required skill
+	public static List<Equipment> getOrderableEquipmentBySkill(Connection conn, SkillClassification skill) throws SQLException {
+	    List<Equipment> list = new ArrayList<>();
+	    String strSQL = "SELECT * FROM equipment WHERE equipStatus = 'Available' AND requiredSkill = ?";
+	    
+	    try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
+	        stmt.setString(1, skill.name());
+	        try (ResultSet rs = stmt.executeQuery()) {
+	            while (rs.next()) {
+	                Equipment equipment = mapResultSetToEquipment(rs);
+	                list.add(equipment);
+	            }
+	        }
+	    }
+	    return list;
+	}
+	
 }

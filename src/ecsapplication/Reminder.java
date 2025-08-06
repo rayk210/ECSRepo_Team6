@@ -16,7 +16,7 @@ public class Reminder {
 	
 	// Constructors
 	public Reminder() {
-		// Blank constructor
+		// Blank constructor overload
 	}
 	
 	public Reminder(Employee employee, Transaction transaction, LocalDate reminderDate) {
@@ -51,6 +51,10 @@ public class Reminder {
 
 	public void setReminderDate(LocalDate reminderDate) {
 		this.reminderDate = reminderDate;
+	}
+	
+	public Transaction getTransaction() {
+		return transaction;
 	}
 
 	public void setTransaction(Transaction transaction) {

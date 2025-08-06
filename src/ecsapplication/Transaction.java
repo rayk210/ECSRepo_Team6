@@ -76,6 +76,7 @@ public class Transaction {
 		this.returnDate = returnDate;
 	}
 	
+	@Override
 	public String toString() {
         return "Transaction{" +
                 "transactionID=" + transactionID +

@@ -33,21 +33,29 @@ import javax.swing.JDialog;
 
 import java.awt.FlowLayout;
 import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 
 public class MainApp extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
-	private JScrollPane scrollEmp;
 	private JButton btnExportCSV;
-	private JTable tblEmployee;
-	private JScrollPane scrollReminder;
-	private JTextArea txtReminder;
 	private JPanel panel;
 	private JComboBox comboEmployees;
 	private JButton btnCheckReminder;
 	private JButton btnCheckoutEquipment;
 	private JButton btnReturnEquipment;
+	private JButton btnOrderEquipment;
+	private JButton btnCancelOrder;
+	private JTabbedPane tabbedPane;
+	private JSplitPane splitPane;
+	private JTable tblEmployee;
+	private JTextArea txtReminder;
+	private JTable tblOrders;
+	private JScrollPane scrollPane_1;
+	private JTable tblEquipment;
 
 	/**
 	 * Launch the application.
@@ -76,16 +84,6 @@ public class MainApp extends JFrame {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout(0, 0));
-		
-		scrollEmp = new JScrollPane();
-		//contentPane.add(scrollPane);
-		
-		tblEmployee = new JTable();
-		scrollEmp.setViewportView(tblEmployee);
-		
-		
-		// Fills Employee JTable
-		FillTable();
 		
 		
 		btnExportCSV = new JButton("Export to CSV");
@@ -126,19 +124,6 @@ public class MainApp extends JFrame {
 			}
 		});
 		contentPane.add(btnExportCSV, BorderLayout.SOUTH);
-		
-		scrollReminder = new JScrollPane();
-		//contentPane.add(scrollPane_1, BorderLayout.CENTER);
-		
-		txtReminder = new JTextArea();
-		scrollReminder.setViewportView(txtReminder);
-		
-		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-		splitPane.setTopComponent(scrollEmp);
-		splitPane.setBottomComponent(scrollReminder);
-		splitPane.setDividerLocation(250);
-
-		contentPane.add(splitPane, BorderLayout.CENTER);
 		
 		panel = new JPanel();
 		contentPane.add(panel, BorderLayout.NORTH);
@@ -199,17 +184,165 @@ public class MainApp extends JFrame {
 		});
 		panel.add(btnReturnEquipment);
 		
-		//loadLatestReminder(4);
+		// order button event listener
+		btnOrderEquipment = new JButton("Order");
+		btnOrderEquipment.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				Employee selectedEmployee = (Employee) comboEmployees.getSelectedItem();
+				if (selectedEmployee == null) {
+					JOptionPane.showMessageDialog(MainApp.this, "Please select an employee before ordering equipment.");
+					return;
+				}
+				openOrderDialog(selectedEmployee);
+			}
+		});
+		panel.add(btnOrderEquipment);
+		
+		
+		// cancel order button
+		btnCancelOrder = new JButton("Cancel");
+		btnCancelOrder.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				int selectedRow = tblOrders.getSelectedRow();
+			    if (selectedRow >= 0) {
+			        // Take orderID from the appropriate column
+			        int orderID = (int) tblOrders.getValueAt(selectedRow, 0);
+
+			        Employee currentEmployee = (Employee) comboEmployees.getSelectedItem();
+
+			        if (currentEmployee != null) {
+			            String resultMSG = currentEmployee.cancelOrder(orderID);
+			            JOptionPane.showMessageDialog(MainApp.this, resultMSG);
+
+			            // Refresh table so that the change is visible
+			            refreshOrdersTable();
+			            refreshEquipmentTable();
+			        } else {
+			            JOptionPane.showMessageDialog(MainApp.this, "Please select an employee first.");
+			        }
+			    } else {
+			        JOptionPane.showMessageDialog(MainApp.this, "Please select an order to cancel.");
+			    }
+
+			}
+		});
+		panel.add(btnCancelOrder);
+		
+		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		tabbedPane.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				
+				int selectedIndex = tabbedPane.getSelectedIndex();
+		        String selectedTitle = tabbedPane.getTitleAt(selectedIndex);
+		        if (selectedTitle.equals("Orders")) {
+		            fillOrdersTable();
+		        }
+
+			}
+		});
+		contentPane.add(tabbedPane, BorderLayout.CENTER);
+
+		// ========== TRANSACTION PANEL ========== //
+		JPanel transactionPanel = new JPanel();
+		tabbedPane.addTab("Transactions", transactionPanel);
+		transactionPanel.setLayout(new BorderLayout());
+
+		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+
+		// --- Employee Table ---
+		tblEmployee = new JTable();
+		JScrollPane scrollTblEmployee = new JScrollPane(tblEmployee);
+		splitPane.setTopComponent(scrollTblEmployee);
+
+		// --- JTextArea Reminder ---
+		txtReminder = new JTextArea();
+		txtReminder.setEditable(false);
+		JScrollPane scrollReminder = new JScrollPane(txtReminder);
+		splitPane.setBottomComponent(scrollReminder);
+
+		// --- Set Proportions ---
+		splitPane.setDividerLocation(300);
+		splitPane.setResizeWeight(0.7);
+
+		transactionPanel.add(splitPane, BorderLayout.CENTER);
+
+		// ========== ORDER PANEL ========== //
+		JPanel orderPanel = new JPanel();
+		tabbedPane.addTab("Orders", orderPanel);
+		orderPanel.setLayout(new BorderLayout());
+
+		scrollPane_1 = new JScrollPane();
+		orderPanel.add(scrollPane_1, BorderLayout.CENTER);
+
+		tblOrders = new JTable();
+		scrollPane_1.setViewportView(tblOrders);
+
+		// ========== EQUIPMENT PANEL ========== //
+		JPanel equipmentPanel = new JPanel();
+		equipmentPanel.setLayout(new BorderLayout());
+		tabbedPane.addTab("Equipment", equipmentPanel);
+
+		tblEquipment = new JTable();
+		JScrollPane scrollPaneEquipment = new JScrollPane(tblEquipment);
+		equipmentPanel.add(scrollPaneEquipment, BorderLayout.CENTER);
+		
+		FillTable();
 
 	}
 	
-	// Employee return dialog box invoke after return button is pressed
+	// order dialog is invoked after employee clicks the "Order" button
+	private void openOrderDialog(Employee employee) {
+	    JDialog dialog = new JDialog(this, "Order Equipment", true);
+	    dialog.setSize(600, 400);
+	    dialog.setLocationRelativeTo(null);
+
+	    DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"ID", "Name", "Skill Required"}, 0);
+	    JTable table = new JTable(tableModel);
+
+	    try (Connection conn = DBConnect.getConnection()) {
+	        List<Equipment> equipment = DBConnect.getOrderableEquipmentBySkill(conn, employee.getSkillClassification());
+	        for (Equipment eq : equipment) {
+	            tableModel.addRow(new Object[]{eq.getEquipmentID(), eq.getEquipmentName(), eq.getRequiredSkill()});
+	        }
+	    } catch (SQLException ex) {
+	        ex.printStackTrace();
+	        JOptionPane.showMessageDialog(dialog, "Failed to load equipment.", "Error", JOptionPane.ERROR_MESSAGE);
+	    }
+
+	    JButton btnConfirm = new JButton("Confirm Order");
+	    btnConfirm.addActionListener(e -> {
+	        int selectedRow = table.getSelectedRow();
+	        if (selectedRow >= 0) {
+	            int equipmentId = (int) tableModel.getValueAt(selectedRow, 0);
+	            try (Connection conn = DBConnect.getConnection()) {
+	                Equipment equipment = DBConnect.getEquipmentByID(conn, equipmentId);
+	                String result = employee.orderEquipment(equipment);
+	                JOptionPane.showMessageDialog(dialog, result);
+	                dialog.dispose();
+	            } catch (SQLException ex) {
+	                ex.printStackTrace();
+	            }
+	        } else {
+	            JOptionPane.showMessageDialog(dialog, "Please select equipment first.");
+	        }
+	    });
+
+	    dialog.getContentPane().setLayout(new BorderLayout());
+	    dialog.getContentPane().add(new JScrollPane(table), BorderLayout.CENTER);
+	    dialog.getContentPane().add(btnConfirm, BorderLayout.SOUTH);
+	    dialog.setVisible(true);
+	}
+
+	
+	// Employee return dialog box invoked after return button is pressed
 	private void openReturnDialog(Employee employee) {
-	    JDialog dialog = new JDialog(this, "Return Equipment for " + employee.getEmpName(), true);
+	    JDialog dialog = new JDialog(MainApp.this, "Return Equipment for " + employee.getEmpName(), true);
 	    dialog.setSize(500, 350);
 	    dialog.setLocationRelativeTo(this);
 	    
-	    // Table column
+	    // Table columns
 	    String[] columns = {"Transaction ID", "Equipment ID", "Equipment Name", "Borrow Date", "Expected Return Date"};
 	    
 	    // Find employee transactions with a borrowed status
@@ -475,7 +608,6 @@ public class MainApp extends JFrame {
             	txtReminder.setText("Reminder for:" + empName + ":\n" + message);
             }
             else {
-            	//String skill = (emp != null) ? emp.getSkillClassification().toString() : "Unknown";
             	txtReminder.setText("No reminder found for:" + empName);
             }
             
@@ -539,12 +671,99 @@ public class MainApp extends JFrame {
 	        }
 	        
 	        // Set new model to JTable
-	        DefaultTableModel model = new DefaultTableModel(data, columnNames);
+	        DefaultTableModel model = new DefaultTableModel(data, columnNames) {
+	            private static final long serialVersionUID = 1L;
+	            @Override
+	            public boolean isCellEditable(int row, int column) {
+	                return false;
+	            }
+	        };
+
 	        tblEmployee.setModel(model);
 
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	        System.out.println("Failed to load transactions from DB");
 	    }
-	}			
+	}
+	
+	public void fillOrdersTable() {
+	    try (Connection conn = DBConnect.getConnection()) {
+	        List<Order> orders = DBConnect.getAllOrders(conn);
+
+	        String[] columnNames = {"Order ID", "Employee Name", "Equipment Name", "Order Date", "Status"};
+	        Object[][] data = new Object[orders.size()][columnNames.length];
+
+	        for (int i = 0; i < orders.size(); i++) {
+	            Order o = orders.get(i);
+	            data[i][0] = o.getOrderID();
+	            data[i][1] = o.getEmployee().getEmpName();
+	            data[i][2] = o.getEquipment().getEquipmentName();
+	            data[i][3] = o.getOrderDate();
+	            data[i][4] = o.getOrderStatus().name();
+	        }
+
+	        DefaultTableModel model = new DefaultTableModel(data, columnNames) {
+	            @Override
+	            public boolean isCellEditable(int row, int column) {
+	                return false;
+	            }
+	        };
+
+	        tblOrders.setModel(model);
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	private void refreshOrdersTable() {
+	    try (Connection conn = DBConnect.getConnection()) {
+	        List<Order> orders = DBConnect.getAllOrders(conn);
+
+	        String[] columnNames = { "Order ID", "Employee", "Equipment", "Order Date", "Status", "Pickup Date" };
+	        DefaultTableModel model = new DefaultTableModel(columnNames, 0);
+
+	        for (Order order : orders) {
+	            Object[] row = {
+	                order.getOrderID(),
+	                order.getEmployee().getEmpName(),
+	                order.getEquipment().getEquipmentName(),
+	                order.getOrderDate(),
+	                order.getOrderStatus(),
+	                order.getPickUpDate()
+	            };
+	            model.addRow(row);
+	        }
+
+	        tblOrders.setModel(model);
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        JOptionPane.showMessageDialog(this, "Failed to refresh orders.");
+	    }
+	}
+	
+	 private void refreshEquipmentTable() {
+	        try (Connection conn = DBConnect.getConnection()) {
+	            List<Equipment> equipmentList = DBConnect.getAllEquipment(conn);
+
+	            String[] columnNames = { "Equipment ID", "Name", "Status", "Required Skill" };
+	            DefaultTableModel model = new DefaultTableModel(columnNames, 0);
+
+	            for (Equipment eq : equipmentList) {
+	                Object[] row = {
+	                    eq.getEquipmentID(),
+	                    eq.getEquipmentName(),
+	                    eq.getStatus(),
+	                    eq.getRequiredSkill()
+	                };
+	                model.addRow(row);
+	            }
+	            tblEquipment.setModel(model);
+
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	            JOptionPane.showMessageDialog(this, "Failed to load equipment.");
+	        }
+	    }
 }

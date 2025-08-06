@@ -15,6 +15,19 @@ public class Equipment {
 	private SkillClassification requiredSkill;
 	
 	// Constructors
+	
+	public Equipment(int equipmentID, String equipmentName) {
+	    this.equipmentID = equipmentID;
+	    this.equipmentName = equipmentName;
+	}
+	
+	public Equipment(int equipmentID, String equipmentName, EquipmentStatus status, SkillClassification requiredSkill) {
+	    this.equipmentID = equipmentID;
+	    this.equipmentName = equipmentName;
+	    this.status = status;
+	    this.requiredSkill = requiredSkill;
+	}
+
 	public Equipment(int equipmentID, String equipmentName, EquipmentCondition equipmentCondition,
 			EquipmentStatus status, SkillClassification requiredSkill) {
 		super();

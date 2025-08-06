@@ -4,7 +4,11 @@ import ecsapplication.enums.SkillClassification;
 import ecsapplication.enums.TransactionStatus;
 import ecsapplication.enums.EquipmentCondition;
 import ecsapplication.enums.EquipmentStatus;
+import ecsapplication.enums.OrderStatus;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +26,12 @@ public class Employee {
     
     public Employee() {
     	this.empTransaction = new ArrayList<>();
+    }
+    
+    public Employee(int empID, String empName) {
+        this.empID = empID;
+        this.empName = empName;
+        this.empTransaction = new ArrayList<>();
     }
     
     public Employee(int empID, String empName, SkillClassification skillClassification) {
@@ -100,9 +110,79 @@ public class Employee {
 	    return transaction;
     }
 
-    public Order orderEquipment(int equipmentID) {
-        return null;
+    public String orderEquipment(Equipment equipment) {
+    	// Validate status
+        if (equipment.getStatus() != EquipmentStatus.Available) {
+            return "Equipment is not available.";
+        }
+
+        // Validate skill
+        if (!this.getSkillClassification().equals(equipment.getRequiredSkill())) {
+            return "You are not qualified to order this equipment.";
+        }
+
+        // Make a new order
+        Order order = new Order(
+            0,                 
+            this,               
+            equipment,
+            LocalDate.now(),   
+            OrderStatus.Confirmed
+        );
+        
+        // Save to the database
+        boolean success = DBConnect.insertOrder(order);
+
+        if (success) {
+            // Update equipment status in database
+            DBConnect.updateEquipmentStatus(equipment.getEquipmentID(), EquipmentStatus.Ordered);
+            return "Order confirmed.";
+        } else {
+            return "Failed to place order.";
+        }
+
     }
+    
+    public String cancelOrder(int orderID) {
+        try (Connection conn = DBConnect.getConnection()) {
+            // Retrieve order 
+            Order order = DBConnect.getOrderByID(conn, orderID);
+            if (order == null) {
+            	return "Order not found";
+            }
+            if (order.getOrderStatus() == OrderStatus.Cancelled) {
+            	return "Order is already cancelled";
+            }
+            
+
+            // Update order status to Cancelled
+            String sqlUpdateOrder = "UPDATE `order` SET orderStatus = 'Cancelled' WHERE orderID = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sqlUpdateOrder)) {
+                stmt.setInt(1, orderID);
+                stmt.executeUpdate();
+            }
+
+            // Update equipment status to Available
+            String sqlUpdateEquip = "UPDATE equipment SET equipStatus = 'Available' WHERE equipmentID = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sqlUpdateEquip)) {
+                stmt.setInt(1, order.getEquipment().getEquipmentID());
+                
+                int affected = stmt.executeUpdate();
+                
+                if (affected > 0) {
+                	return "Order successfully cancelled";
+                }
+                else {
+                	return "Failed to cancel order";
+                }
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "An error occured while cancelling the order.";
+        }
+    }
+
 
     public Transaction returnEquipment(int transactionID, EquipmentCondition condition) {
     	
@@ -122,7 +202,7 @@ public class Employee {
     			// change equipments condition
     			eq.setEquipmentCondition(condition);
     			
-    			System.out.println("Transaction " + txn.getTransactionID() + "was successfully returned by: " + this.getEmpName());
+    			System.out.println("Transaction " + txn.getTransactionID() + " was successfully returned by: " + this.getEmpName());
     			return txn;
     		}
     	}

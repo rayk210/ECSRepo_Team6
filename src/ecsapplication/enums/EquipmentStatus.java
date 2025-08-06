@@ -4,7 +4,8 @@ public enum EquipmentStatus {
 
 	Loaned,
 	Lost,
-	Available;
+	Available,
+	Ordered;
 	
 	public static EquipmentStatus fromString(String value) {
 	    if (value == null) {
