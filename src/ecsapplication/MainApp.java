@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.awt.event.ActionEvent;
 import java.awt.BorderLayout;
+import java.awt.Color;
+
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
@@ -41,7 +43,7 @@ public class MainApp extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
-	private JButton btnExportCSV;
+	private JButton btnExportTransaction;
 	private JPanel panel;
 	private JComboBox comboEmployees;
 	private JButton btnCheckReminder;
@@ -82,51 +84,80 @@ public class MainApp extends JFrame {
 		setBounds(100, 100, 900, 400);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		
+		// Change background color
+		contentPane.setBackground(new Color(0, 153, 153));
+		
 		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout(0, 0));
 		
 		
-		btnExportCSV = new JButton("Export to CSV");
-		
-		// Action listener for export button
-		btnExportCSV.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				
-				// Navigate file system
-				JFileChooser fileChooser = new JFileChooser();
-			    fileChooser.setDialogTitle("Save CSV file");
-			    
-			  
-			    FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files", "csv");
-			    fileChooser.setFileFilter(filter);
-			    
-			    int userSelection = fileChooser.showSaveDialog(null);
-			    
-			    if (userSelection == JFileChooser.APPROVE_OPTION) {
-			        File fileToSave = fileChooser.getSelectedFile();
-			        String filePath = fileToSave.getAbsolutePath();
-			        
-			       
-			        if (!filePath.toLowerCase().endsWith(".csv")) {
-			            filePath += ".csv";
-			        }
-			        
-			        try {
-			            CSVExporter.exportToCSV(tblEmployee, filePath);
-			            System.out.println("CSV successfully was exported to: " + filePath);
-			        } catch (IOException ex) {
-			            ex.printStackTrace();
-			            System.out.println("Failed to save file CSV.");
-			        }
-			    } else {
-			        System.out.println("Export cancelled by user.");
-			    }
-			}
+		JPanel bottomPanel = new JPanel();
+		bottomPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
+
+		// Export Transaction button
+		btnExportTransaction = new JButton("Export Transactions");
+		// Action listener for export transaction button
+		btnExportTransaction.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+		        JFileChooser fileChooser = new JFileChooser();
+		        fileChooser.setDialogTitle("Save Transactions CSV");
+		        FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files", "csv");
+		        fileChooser.setFileFilter(filter);
+
+		        int userSelection = fileChooser.showSaveDialog(null);
+		        if (userSelection == JFileChooser.APPROVE_OPTION) {
+		            File fileToSave = fileChooser.getSelectedFile();
+		            String filePath = fileToSave.getAbsolutePath();
+		            if (!filePath.toLowerCase().endsWith(".csv")) {
+		                filePath += ".csv";
+		            }
+		            try {
+		                CSVExporter.exportToCSV(tblEmployee, filePath);
+		                System.out.println("Transactions exported to: " + filePath);
+		            } catch (IOException ex) {
+		                ex.printStackTrace();
+		                System.out.println("Failed to export Transactions.");
+		            }
+		        }
+		    }
 		});
-		contentPane.add(btnExportCSV, BorderLayout.SOUTH);
+		bottomPanel.add(btnExportTransaction);
+
+		// Export Orders button
+		JButton btnExportOrders = new JButton("Export Orders");
+		btnExportOrders.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+		        JFileChooser fileChooser = new JFileChooser();
+		        fileChooser.setDialogTitle("Save Orders CSV");
+		        FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files", "csv");
+		        fileChooser.setFileFilter(filter);
+
+		        int userSelection = fileChooser.showSaveDialog(null);
+		        if (userSelection == JFileChooser.APPROVE_OPTION) {
+		            File fileToSave = fileChooser.getSelectedFile();
+		            String filePath = fileToSave.getAbsolutePath();
+		            if (!filePath.toLowerCase().endsWith(".csv")) {
+		                filePath += ".csv";
+		            }
+		            try {
+		                CSVExporter.exportToCSV(tblOrders, filePath);
+		                System.out.println("Orders exported to: " + filePath);
+		            } catch (IOException ex) {
+		                ex.printStackTrace();
+		                System.out.println("Failed to export Orders.");
+		            }
+		        }
+		    }
+		});
+		bottomPanel.add(btnExportOrders);
+
+
+		contentPane.add(bottomPanel, BorderLayout.SOUTH);
 		
 		panel = new JPanel();
 		contentPane.add(panel, BorderLayout.NORTH);
+		
 		
 		btnCheckReminder = new JButton("Check Reminder");
 		
@@ -301,7 +332,7 @@ public class MainApp extends JFrame {
 	    DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"ID", "Name", "Skill Required"}, 0);
 	    JTable table = new JTable(tableModel);
 
-	    try (Connection conn = DBConnect.getConnection()) {
+	    try (Connection conn = DBConnect.getInstance().getConnection()) {
 	        List<Equipment> equipment = DBConnect.getOrderableEquipmentBySkill(conn, employee.getSkillClassification());
 	        for (Equipment eq : equipment) {
 	            tableModel.addRow(new Object[]{eq.getEquipmentID(), eq.getEquipmentName(), eq.getRequiredSkill()});
@@ -316,7 +347,7 @@ public class MainApp extends JFrame {
 	        int selectedRow = table.getSelectedRow();
 	        if (selectedRow >= 0) {
 	            int equipmentId = (int) tableModel.getValueAt(selectedRow, 0);
-	            try (Connection conn = DBConnect.getConnection()) {
+	            try (Connection conn = DBConnect.getInstance().getConnection()) {
 	                Equipment equipment = DBConnect.getEquipmentByID(conn, equipmentId);
 	                String result = employee.orderEquipment(equipment);
 	                JOptionPane.showMessageDialog(dialog, result);
@@ -412,7 +443,7 @@ public class MainApp extends JFrame {
 	        
 	        Connection conn = null;
 	        try {
-	            conn = DBConnect.getConnection();
+	            conn = DBConnect.getInstance().getConnection();
 	            conn.setAutoCommit(false);
 	            
 	            
@@ -473,7 +504,7 @@ public class MainApp extends JFrame {
 	    // two dimensional array used save data from equipment list
 	    // [i] = equipment whereas second [] represents column
 	    Object[][] data = new Object[0][];
-	    try (Connection conn = DBConnect.getConnection()) {
+	    try (Connection conn = DBConnect.getInstance().getConnection()) {
 	    	List<Equipment> equipmentList = DBConnect.getAvailableEquipmentBySkill(conn, employee.getSkillClassification());
 	    	data = new Object[equipmentList.size()][5];
 	    	
@@ -540,7 +571,7 @@ public class MainApp extends JFrame {
     		        "Confirm Checkout", JOptionPane.YES_NO_OPTION);
 	        
 	        if(confirm == JOptionPane.YES_OPTION) {
-	        	try (Connection conn = DBConnect.getConnection()){
+	        	try (Connection conn = DBConnect.getInstance().getConnection()){
 	        		conn.setAutoCommit(false);
 	        		
 	        		// Update equipment status to loaned after checked out
@@ -598,7 +629,7 @@ public class MainApp extends JFrame {
 	
 	// Load reminders in txtReminder TextArea
 	private void loadLatestReminder(int empID) {
-        try (Connection conn = DBConnect.getConnection()) {
+        try (Connection conn = DBConnect.getInstance().getConnection()) {
             Reminder reminderMessage = DBConnect.getLatestReminderMessage(conn, empID);
             
             Employee emp = DBConnect.getEmployeeByID(conn, empID); 
@@ -619,7 +650,7 @@ public class MainApp extends JFrame {
 	
 	// Load employees into ComboBox
 	private void loadEmployeesIntoComboBox() {
-	    try (Connection conn = DBConnect.getConnection()) {
+	    try (Connection conn = DBConnect.getInstance().getConnection()) {
 	        java.util.List<Employee> employees = DBConnect.getAllEmployees(conn);
 	        comboEmployees.removeAllItems();
 	        for (Employee emp : employees) {
@@ -642,7 +673,7 @@ public class MainApp extends JFrame {
 
 
 	public void FillTable() {
-		try (Connection conn = DBConnect.getConnection()) {
+		try (Connection conn = DBConnect.getInstance().getConnection()) {
 	        List<Transaction> transactions = DBConnect.getAllTransactions(conn);
 	        
 	       
@@ -688,7 +719,7 @@ public class MainApp extends JFrame {
 	}
 	
 	public void fillOrdersTable() {
-	    try (Connection conn = DBConnect.getConnection()) {
+	    try (Connection conn = DBConnect.getInstance().getConnection()) {
 	        List<Order> orders = DBConnect.getAllOrders(conn);
 
 	        String[] columnNames = {"Order ID", "Employee Name", "Equipment Name", "Order Date", "Status"};
@@ -718,7 +749,7 @@ public class MainApp extends JFrame {
 	}
 	
 	private void refreshOrdersTable() {
-	    try (Connection conn = DBConnect.getConnection()) {
+	    try (Connection conn = DBConnect.getInstance().getConnection()) {
 	        List<Order> orders = DBConnect.getAllOrders(conn);
 
 	        String[] columnNames = { "Order ID", "Employee", "Equipment", "Order Date", "Status", "Pickup Date" };
@@ -744,7 +775,7 @@ public class MainApp extends JFrame {
 	}
 	
 	 private void refreshEquipmentTable() {
-	        try (Connection conn = DBConnect.getConnection()) {
+	        try (Connection conn = DBConnect.getInstance().getConnection()) {
 	            List<Equipment> equipmentList = DBConnect.getAllEquipment(conn);
 
 	            String[] columnNames = { "Equipment ID", "Name", "Status", "Required Skill" };

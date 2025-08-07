@@ -11,16 +11,40 @@ import ecsapplication.enums.OrderStatus;
 import ecsapplication.enums.SkillClassification;
 import ecsapplication.enums.TransactionStatus;
 
-
+// Singleton Pattern
 public class DBConnect {
 	
-	private static final String url = "jdbc:mysql://localhost:3306/ceis400courseproject";
-	private static final String username = "root";
-	private static final String password = "devry123";
+	// Attributes
+    private static DBConnect instance;
+    private Connection connection;
 
-	public static Connection getConnection()throws SQLException {
-		return DriverManager.getConnection(url, username, password);
-	}
+    private static final String url = "jdbc:mysql://localhost:3306/ceis400courseproject";
+    private static final String username = "root";
+    private static final String password = "devry123";
+
+    // Constructor set to private so it cannot be directly accessed outside of the class
+    private DBConnect() throws SQLException {
+        try {
+            connection = DriverManager.getConnection(url, username, password);
+        } catch (SQLException e) {
+            throw new SQLException("Failed to connect to the database", e);
+        }
+    }
+
+    // Public method to obtain a single instance of DBConnect
+    // Synchronized prevents another thread from accessing this method
+    public static synchronized DBConnect getInstance() throws SQLException {
+        if (instance == null || instance.getConnection().isClosed()) {
+            instance = new DBConnect();
+        }
+        return instance;
+    }
+
+    // Getter method for Connection
+    public Connection getConnection() {
+        return connection;
+    }
+
 	
 	public static Employee getEmployeeByID(Connection conn, int empID) throws SQLException {
 		String strSQL = "SELECT empID, empName, skillClassification FROM employee WHERE empID = ?";
@@ -287,7 +311,7 @@ public class DBConnect {
 	// update equipment status
 	public static boolean updateEquipmentStatus(int equipmentID, EquipmentStatus status) {
 	    String strSQL = "UPDATE equipment SET equipStatus = ? WHERE equipmentID = ?";
-	    try (Connection conn = getConnection();
+	    try (Connection conn = DBConnect.getInstance().getConnection();
 	         PreparedStatement stmt = conn.prepareStatement(strSQL)) {
 	        stmt.setString(1, status.name());
 	        stmt.setInt(2, equipmentID);
@@ -313,7 +337,7 @@ public class DBConnect {
 	public static boolean insertOrder(Order order) {
 	    String strSQL = "INSERT INTO `order` (empID, equipmentID, orderDate, orderStatus) VALUES (?, ?, ?, ?)";
 	    
-	    try (Connection conn = getConnection();
+	    try (Connection conn = DBConnect.getInstance().getConnection();
 	         PreparedStatement stmt = conn.prepareStatement(strSQL)) {
 	        
 	        stmt.setInt(1, order.getEmployee().getEmpID());

@@ -144,7 +144,7 @@ public class Employee {
     }
     
     public String cancelOrder(int orderID) {
-        try (Connection conn = DBConnect.getConnection()) {
+        try (Connection conn = DBConnect.getInstance().getConnection()) {
             // Retrieve order 
             Order order = DBConnect.getOrderByID(conn, orderID);
             if (order == null) {
