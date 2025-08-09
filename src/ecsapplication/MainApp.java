@@ -115,9 +115,11 @@ public class MainApp extends JFrame {
 		            try {
 		                CSVExporter.exportToCSV(tblEmployee, filePath);
 		                System.out.println("Transactions exported to: " + filePath);
+		                JOptionPane.showMessageDialog(null, "Successfully exported Transactions to:\n" + filePath);
 		            } catch (IOException ex) {
 		                ex.printStackTrace();
 		                System.out.println("Failed to export Transactions.");
+		                JOptionPane.showMessageDialog(null, "Failed to export Transactions.\nPlease try again.");
 		            }
 		        }
 		    }
@@ -143,9 +145,11 @@ public class MainApp extends JFrame {
 		            try {
 		                CSVExporter.exportToCSV(tblOrders, filePath);
 		                System.out.println("Orders exported to: " + filePath);
+		                JOptionPane.showMessageDialog(null, "Successfully exported Orders to:\n" + filePath);
 		            } catch (IOException ex) {
 		                ex.printStackTrace();
 		                System.out.println("Failed to export Orders.");
+		                JOptionPane.showMessageDialog(null, "Failed to export Orders.\nPlease try again.");
 		            }
 		        }
 		    }
@@ -194,7 +198,7 @@ public class MainApp extends JFrame {
 				if (selectedEmployee != null) {
 				    openCheckoutDialog(selectedEmployee);
 				} else {
-				    txtReminder.setText("Please select an employee before checking out equipment.");
+				    JOptionPane.showMessageDialog(MainApp.this, "Please select an employee before checking out equipment.");
 				}
 			}
 		});
@@ -325,7 +329,7 @@ public class MainApp extends JFrame {
 	
 	// order dialog is invoked after employee clicks the "Order" button
 	private void openOrderDialog(Employee employee) {
-	    JDialog dialog = new JDialog(this, "Order Equipment", true);
+	    JDialog dialog = new JDialog(this, "Order Equipment for " + employee.getEmpName(), true);
 	    dialog.setSize(600, 400);
 	    dialog.setLocationRelativeTo(null);
 
@@ -472,7 +476,7 @@ public class MainApp extends JFrame {
 	            if (conn != null) {
 	                try {
 	                    conn.setAutoCommit(true);  // reset autocommit
-	                    conn.close();
+	                    
 	                } catch (SQLException closeEx) {
 	                    closeEx.printStackTrace();
 	                }
@@ -671,7 +675,7 @@ public class MainApp extends JFrame {
 	    }
 	}
 
-
+	// Displays employee transactions under 'Transactions' panel 
 	public void FillTable() {
 		try (Connection conn = DBConnect.getInstance().getConnection()) {
 	        List<Transaction> transactions = DBConnect.getAllTransactions(conn);
@@ -718,6 +722,7 @@ public class MainApp extends JFrame {
 	    }
 	}
 	
+	// Displays employee orders under 'Orders' panel
 	public void fillOrdersTable() {
 	    try (Connection conn = DBConnect.getInstance().getConnection()) {
 	        List<Order> orders = DBConnect.getAllOrders(conn);

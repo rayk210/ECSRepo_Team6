@@ -36,13 +36,15 @@ public class DBConnect {
     public static synchronized DBConnect getInstance() throws SQLException {
         if (instance == null || instance.getConnection().isClosed()) {
             instance = new DBConnect();
+        }else if (instance.connection == null || instance.connection.isClosed()) {
+        	instance.connection = DriverManager.getConnection(url, username, password);
         }
         return instance;
     }
 
     // Getter method for Connection
-    public Connection getConnection() {
-        return connection;
+    public Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(url, username, password);
     }
 
 	
@@ -337,17 +339,18 @@ public class DBConnect {
 	public static boolean insertOrder(Order order) {
 	    String strSQL = "INSERT INTO `order` (empID, equipmentID, orderDate, orderStatus) VALUES (?, ?, ?, ?)";
 	    
-	    try (Connection conn = DBConnect.getInstance().getConnection();
-	         PreparedStatement stmt = conn.prepareStatement(strSQL)) {
-	        
-	        stmt.setInt(1, order.getEmployee().getEmpID());
-	        stmt.setInt(2, order.getEquipment().getEquipmentID());
-	        stmt.setDate(3, java.sql.Date.valueOf(order.getOrderDate()));
-	        stmt.setString(4, order.getOrderStatus().name());
-	        
-	        int affectedRows = stmt.executeUpdate();
-	        return affectedRows > 0;
-	        
+	    Connection conn = null;
+	    try {
+	        conn = DBConnect.getInstance().getConnection();
+	        try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
+	            stmt.setInt(1, order.getEmployee().getEmpID());
+	            stmt.setInt(2, order.getEquipment().getEquipmentID());
+	            stmt.setDate(3, java.sql.Date.valueOf(order.getOrderDate()));
+	            stmt.setString(4, order.getOrderStatus().name());
+
+	            int affectedRows = stmt.executeUpdate();
+	            return affectedRows > 0;
+	        }
 	    } catch (SQLException e) {
 	        e.printStackTrace();
 	        return false;
@@ -371,7 +374,7 @@ public class DBConnect {
 	            int empID = rs.getInt("empID");
 	            int equipID = rs.getInt("equipmentID");
 	            Date orderDate = rs.getDate("orderDate");
-	            String statusStr = rs.getString("OrderStatus");
+	            String statusStr = rs.getString("orderStatus");
 	            Date pickupDate = rs.getDate("pickUpDate");
 
 	            // Make Employee and Equipment object from data
@@ -467,8 +470,8 @@ public class DBConnect {
 	                Equipment eqForOrder = eq;  
 	                Employee empForOrder = null; 
 	                
-	                LocalDate orderDate = rs.getDate("orderOrderDate") != null
-	                    ? rs.getDate("orderOrderDate").toLocalDate() : null;
+	                LocalDate orderDate = rs.getDate("OrderDate") != null
+	                    ? rs.getDate("OrderDate").toLocalDate() : null;
 	                
 	                OrderStatus orderStatus = rs.getString("orderStatus") != null
 	                    ? OrderStatus.valueOf(rs.getString("orderStatus")) : null;
