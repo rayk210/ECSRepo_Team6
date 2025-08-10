@@ -131,11 +131,11 @@ public class Employee {
         );
         
         // Save to the database
-        boolean success = DBConnect.insertOrder(order);
+        boolean success = OrderDAO.insertOrder(order);
 
         if (success) {
             // Update equipment status in database
-            DBConnect.updateEquipmentStatus(equipment.getEquipmentID(), EquipmentStatus.Ordered);
+            EquipmentDAO.updateEquipmentStatus(equipment.getEquipmentID(), EquipmentStatus.Ordered);
             return "Order confirmed.";
         } else {
             return "Failed to place order.";
@@ -146,7 +146,7 @@ public class Employee {
     public String cancelOrder(int orderID) {
         try (Connection conn = DBConnect.getInstance().getConnection()) {
             // Retrieve order 
-            Order order = DBConnect.getOrderByID(conn, orderID);
+            Order order = OrderDAO.getOrderByID(conn, orderID);
             if (order == null) {
             	return "Order not found";
             }

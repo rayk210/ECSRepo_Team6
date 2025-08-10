@@ -169,12 +169,12 @@ public class MainApp extends JFrame {
 		btnCheckReminder.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
-				Employee selectedEmployee = (Employee) comboEmployees.getSelectedItem();
-		        if (selectedEmployee != null) {
-		            loadLatestReminder(selectedEmployee.getEmpID());
-		        } else {
-		            txtReminder.setText("Please select an employee.");
-		        }
+				//Employee selectedEmployee = (Employee) comboEmployees.getSelectedItem();
+		        //if (selectedEmployee != null) {
+		           // loadLatestReminder(selectedEmployee.getEmpID());
+		        //} else {
+		        //    txtReminder.setText("Please select an employee.");
+		      //  }
 			}
 		});
 		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
@@ -337,7 +337,7 @@ public class MainApp extends JFrame {
 	    JTable table = new JTable(tableModel);
 
 	    try (Connection conn = DBConnect.getInstance().getConnection()) {
-	        List<Equipment> equipment = DBConnect.getOrderableEquipmentBySkill(conn, employee.getSkillClassification());
+	        List<Equipment> equipment = EquipmentDAO.getOrderableEquipmentBySkill(conn, employee.getSkillClassification());
 	        for (Equipment eq : equipment) {
 	            tableModel.addRow(new Object[]{eq.getEquipmentID(), eq.getEquipmentName(), eq.getRequiredSkill()});
 	        }
@@ -352,7 +352,7 @@ public class MainApp extends JFrame {
 	        if (selectedRow >= 0) {
 	            int equipmentId = (int) tableModel.getValueAt(selectedRow, 0);
 	            try (Connection conn = DBConnect.getInstance().getConnection()) {
-	                Equipment equipment = DBConnect.getEquipmentByID(conn, equipmentId);
+	                Equipment equipment = EquipmentDAO.getEquipmentByID(conn, equipmentId);
 	                String result = employee.orderEquipment(equipment);
 	                JOptionPane.showMessageDialog(dialog, result);
 	                dialog.dispose();
@@ -452,8 +452,8 @@ public class MainApp extends JFrame {
 	            
 	            
 
-	            DBConnect.updateTransactionReturn(conn, returnedTxn);
-	            DBConnect.updateEquipment(conn, returnedTxn.getEquipment());
+	            TransactionDAO.updateTransactionReturn(conn, returnedTxn);
+	            EquipmentDAO.updateEquipment(conn, returnedTxn.getEquipment());
 
 	            conn.commit();
 
@@ -509,7 +509,7 @@ public class MainApp extends JFrame {
 	    // [i] = equipment whereas second [] represents column
 	    Object[][] data = new Object[0][];
 	    try (Connection conn = DBConnect.getInstance().getConnection()) {
-	    	List<Equipment> equipmentList = DBConnect.getAvailableEquipmentBySkill(conn, employee.getSkillClassification());
+	    	List<Equipment> equipmentList = EquipmentDAO.getAvailableEquipmentBySkill(conn, employee.getSkillClassification());
 	    	data = new Object[equipmentList.size()][5];
 	    	
 	    	// display message if no equipment is available for an employees skill
@@ -631,31 +631,12 @@ public class MainApp extends JFrame {
 	    dialog.setVisible(true);
 	}
 	
-	// Load reminders in txtReminder TextArea
-	private void loadLatestReminder(int empID) {
-        try (Connection conn = DBConnect.getInstance().getConnection()) {
-            Reminder reminderMessage = DBConnect.getLatestReminderMessage(conn, empID);
-            
-            Employee emp = DBConnect.getEmployeeByID(conn, empID); 
-            String empName = (emp != null) ? emp.getEmpName() : "Unknown Employee";
-            if (reminderMessage != null) {
-            	String message = reminderMessage.getReminderMSG();
-            	txtReminder.setText("Reminder for:" + empName + ":\n" + message);
-            }
-            else {
-            	txtReminder.setText("No reminder found for:" + empName);
-            }
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-            txtReminder.setText("Failed to load reminder.");
-        }
-    }
+	
 	
 	// Load employees into ComboBox
 	private void loadEmployeesIntoComboBox() {
 	    try (Connection conn = DBConnect.getInstance().getConnection()) {
-	        java.util.List<Employee> employees = DBConnect.getAllEmployees(conn);
+	        java.util.List<Employee> employees = EmployeeDAO.getAllEmployees(conn);
 	        comboEmployees.removeAllItems();
 	        for (Employee emp : employees) {
 	        	// Verify employees loaded
@@ -678,7 +659,7 @@ public class MainApp extends JFrame {
 	// Displays employee transactions under 'Transactions' panel 
 	public void FillTable() {
 		try (Connection conn = DBConnect.getInstance().getConnection()) {
-	        List<Transaction> transactions = DBConnect.getAllTransactions(conn);
+	        List<Transaction> transactions = TransactionDAO.getAllTransactions(conn);
 	        
 	       
 	        String[] columnNames = {
@@ -725,7 +706,7 @@ public class MainApp extends JFrame {
 	// Displays employee orders under 'Orders' panel
 	public void fillOrdersTable() {
 	    try (Connection conn = DBConnect.getInstance().getConnection()) {
-	        List<Order> orders = DBConnect.getAllOrders(conn);
+	        List<Order> orders = OrderDAO.getAllOrders(conn);
 
 	        String[] columnNames = {"Order ID", "Employee Name", "Equipment Name", "Order Date", "Status"};
 	        Object[][] data = new Object[orders.size()][columnNames.length];
@@ -755,7 +736,7 @@ public class MainApp extends JFrame {
 	
 	private void refreshOrdersTable() {
 	    try (Connection conn = DBConnect.getInstance().getConnection()) {
-	        List<Order> orders = DBConnect.getAllOrders(conn);
+	        List<Order> orders = OrderDAO.getAllOrders(conn);
 
 	        String[] columnNames = { "Order ID", "Employee", "Equipment", "Order Date", "Status", "Pickup Date" };
 	        DefaultTableModel model = new DefaultTableModel(columnNames, 0);
@@ -781,7 +762,7 @@ public class MainApp extends JFrame {
 	
 	 private void refreshEquipmentTable() {
 	        try (Connection conn = DBConnect.getInstance().getConnection()) {
-	            List<Equipment> equipmentList = DBConnect.getAllEquipment(conn);
+	            List<Equipment> equipmentList = EquipmentDAO.getAllEquipment(conn);
 
 	            String[] columnNames = { "Equipment ID", "Name", "Status", "Required Skill" };
 	            DefaultTableModel model = new DefaultTableModel(columnNames, 0);

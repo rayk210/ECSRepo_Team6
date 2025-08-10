@@ -1,10 +1,13 @@
 package ecsapplication;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import ecsapplication.enums.TransactionStatus;
 
-public class Transaction {
+// Subject in Observer design pattern
+public class Transaction implements Subject {
 
 	// Attributes
 	private int transactionID;
@@ -16,6 +19,9 @@ public class Transaction {
     private LocalDate expectedReturnDate;
     private LocalDate returnDate;
     private TransactionStatus transactionStatus;
+    
+    // Observer list
+    private List<Observer> observers = new ArrayList<>();
     
     // Constructor
 	public Transaction(int transactionID, Employee employee, Equipment equipment, Order order, LocalDate orderDate,
@@ -31,6 +37,26 @@ public class Transaction {
 		this.transactionStatus = transactionStatus;
 	}
 
+	// Subject methods
+	@Override
+	public void registerObserver(Observer observer) {
+		if(!observers.contains(observer)) {
+			observers.add(observer);
+		}
+	}
+	
+	@Override
+	public void removeObserver(Observer observer) {
+		observers.remove(observer);
+	}
+	
+	@Override
+	public void notifyObservers() {
+		for(Observer observer : observers) {
+			observer.update(this);
+		}
+	}
+	
 	// Getters
 	public int getTransactionID() {
 		return transactionID;
@@ -66,6 +92,7 @@ public class Transaction {
 	
 	public void setTransactionStatus(TransactionStatus transactionStatus) {
 		this.transactionStatus = transactionStatus;
+		notifyObservers();
 	}
 	
 	public LocalDate getReturnDate() {
@@ -74,6 +101,12 @@ public class Transaction {
 	
 	public void setReturnDate(LocalDate returnDate) {
 		this.returnDate = returnDate;
+		notifyObservers();
+	}
+	
+	// Method specifically used to notify observer, manually called
+	public void notifyTransactionChanged() {
+		notifyObservers();
 	}
 	
 	@Override

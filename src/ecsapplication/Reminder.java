@@ -1,11 +1,12 @@
 package ecsapplication;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
 
-public class Reminder {
+
+// Observer in Observer design pattern
+public class Reminder implements Observer{
 
 	// Attributes
 	private int reminderID;
@@ -27,6 +28,31 @@ public class Reminder {
 		generateReminder();
 	}
 
+	// Updates the transaction received from the Subject
+	@Override
+	public void update(Transaction transaction) {
+		
+		if(transaction == null || transaction.getEmployee() == null) {
+			System.out.println("Update not complete: transactionor employee is null");
+		}
+		this.transaction = transaction;
+		this.employee = transaction.getEmployee();
+		
+		// set reminder date to today when updated
+		this.reminderDate = LocalDate.now();
+		
+		// generate a new reminders based on up-to-date data
+		generateReminder();
+		
+		// save latest reminder to database
+		try (Connection conn = DBConnect.getInstance().getConnection()) {
+	        ReminderDAO.saveReminder(this, conn);
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        System.out.println("Failed to save reminder to database");
+	    }	
+	}
+	
 	// Getters and Setters
 	
 	public int getReminderID() {
@@ -73,54 +99,44 @@ public class Reminder {
 	public void generateReminder() {
 		
 		if (transaction == null || employee == null) {
-			reminderMSG = "Reminder Error: Transaction or Employee is missing.";
-			return;
-		}
-		
-        LocalDate dueDate = transaction.getExpectedReturnDate();
-        String equipmentName = transaction.getEquipment().getEquipmentName();
-        String empName = employee.getEmpName();
+	        reminderMSG = "Reminder Error: Transaction or Employee is missing.";
+	        return;
+	    }
+	    
+	    LocalDate dueDate = transaction.getExpectedReturnDate();
+	    if (dueDate == null) {
+	        reminderMSG = "Reminder Error: Expected return date is missing.";
+	        return;
+	    }
+	    
+	    Equipment equipment = transaction.getEquipment();
+	    if (equipment == null) {
+	        reminderMSG = "Reminder Error: Equipment data is missing.";
+	        return;
+	    }
+	    
+	    String equipmentName = equipment.getEquipmentName();
+	    String empName = employee.getEmpName();
 
-        if (reminderDate.isAfter(dueDate)) {
-            reminderMSG = "Reminder: " + empName + " has an overdue item: " + equipmentName + 
-                              ". Due on: " + dueDate;
-        } else if (reminderDate.plusDays(2).isAfter(dueDate)) {
-            reminderMSG = "Reminder: " + empName + " should return: " + equipmentName +
-                              " by " + dueDate;
-        } else {
-            reminderMSG = "No action needed.";
-        }
-    }
+	    if (reminderDate.isAfter(dueDate)) {
+	        reminderMSG = "Reminder: " + empName + " has an overdue item: " + equipmentName + 
+	                      ". Due on: " + dueDate;
+	    } else if (!reminderDate.isAfter(dueDate) &&
+	               dueDate.minusDays(2).isBefore(reminderDate)) {
+	        reminderMSG = "Reminder: " + empName + " should return: " + equipmentName +
+	                      " by " + dueDate;
+	    } else {
+	        reminderMSG = "No action needed.";
+	    }
 
-    // Simulate sending reminder
-    public void sendTo(Employee employee) {
-        System.out.println("Sending reminder to: " + employee.getEmpName());
-        System.out.println("Message: " + reminderMSG);
-    }
-
-    
-    public void saveToDatabase(Connection conn) {
-        String strSQL = "INSERT INTO reminder (empID, transactionID, reminderDate, reminderMSG) VALUES (?, ?, ?, ?)";
-        
-        // Prepared Statement to protect against SQL attacks
-        try (PreparedStatement pstmt = conn.prepareStatement(strSQL)) {
-            pstmt.setInt(1, employee.getEmpID());
-            pstmt.setInt(2, transaction.getTransactionID());
-            pstmt.setDate(3, java.sql.Date.valueOf(reminderDate));
-            pstmt.setString(4, reminderMSG);
-            pstmt.executeUpdate();
-            System.out.println("Reminder saved to database.");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
     }
     
     @Override
     public String toString() {
         return "Reminder{" +
                 "reminderID=" + reminderID +
-                ", employee=" + employee.getEmpName() +
-                ", transactionID=" + transaction.getTransactionID() +
+                ", employee=" + (employee != null ? employee.getEmpName() : "null") +
+                ", transactionID=" + (transaction != null ? transaction.getTransactionID() : "null") +
                 ", reminderDate=" + reminderDate +
                 ", message='" + reminderMSG + '\'' +
                 '}';
