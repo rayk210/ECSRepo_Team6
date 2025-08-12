@@ -3,6 +3,7 @@ package ecsapplication;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 
 // Observer in Observer design pattern
@@ -33,8 +34,10 @@ public class Reminder implements Observer{
 	public void update(Transaction transaction) {
 		
 		if(transaction == null || transaction.getEmployee() == null) {
-			System.out.println("Update not complete: transactionor employee is null");
+			System.out.println("Update not complete: transaction or employee is null");
+			return;
 		}
+		
 		this.transaction = transaction;
 		this.employee = transaction.getEmployee();
 		
@@ -97,7 +100,6 @@ public class Reminder implements Observer{
 
 	// Generate reminder
 	public void generateReminder() {
-		
 		if (transaction == null || employee == null) {
 	        reminderMSG = "Reminder Error: Transaction or Employee is missing.";
 	        return;
@@ -117,16 +119,19 @@ public class Reminder implements Observer{
 	    
 	    String equipmentName = equipment.getEquipmentName();
 	    String empName = employee.getEmpName();
+	    
+	    LocalDate reminderDate = LocalDate.now();
+	    long daysLeft = ChronoUnit.DAYS.between(reminderDate, dueDate);
 
 	    if (reminderDate.isAfter(dueDate)) {
-	        reminderMSG = "Reminder: " + empName + " has an overdue item: " + equipmentName + 
+	        reminderMSG = empName + " has an overdue item: " + equipmentName + 
 	                      ". Due on: " + dueDate;
 	    } else if (!reminderDate.isAfter(dueDate) &&
 	               dueDate.minusDays(2).isBefore(reminderDate)) {
-	        reminderMSG = "Reminder: " + empName + " should return: " + equipmentName +
+	        reminderMSG = empName + " should return: " + equipmentName +
 	                      " by " + dueDate;
 	    } else {
-	        reminderMSG = "No action needed.";
+	        reminderMSG = "No action needed for: " + equipmentName + ". Time left to return: " + daysLeft + " days.";
 	    }
 
     }

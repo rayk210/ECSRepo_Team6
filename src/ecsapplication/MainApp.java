@@ -10,6 +10,7 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.DefaultCaret;
 
 import ecsapplication.enums.EquipmentCondition;
 import ecsapplication.enums.EquipmentStatus;
@@ -17,6 +18,7 @@ import ecsapplication.enums.SkillClassification;
 import ecsapplication.enums.TransactionStatus;
 
 import javax.swing.JTable;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 
@@ -26,14 +28,18 @@ import java.io.IOException;
 import java.awt.event.ActionEvent;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 
 import java.awt.FlowLayout;
+import java.awt.Font;
+
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeListener;
@@ -169,12 +175,46 @@ public class MainApp extends JFrame {
 		btnCheckReminder.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
-				//Employee selectedEmployee = (Employee) comboEmployees.getSelectedItem();
-		        //if (selectedEmployee != null) {
-		           // loadLatestReminder(selectedEmployee.getEmpID());
-		        //} else {
-		        //    txtReminder.setText("Please select an employee.");
-		      //  }
+				Employee selectedEmployee = (Employee) comboEmployees.getSelectedItem();
+				
+				if(selectedEmployee == null) {
+					JOptionPane.showMessageDialog(MainApp.this, "Please select an Employee from the drop menu");
+					return;
+				}
+				
+				try(Connection conn = DBConnect.getInstance().getConnection()){
+					
+					// 1. Retrieve all BORROWED transactions for employees
+					List<Transaction> borrowedTransaction = TransactionDAO.getBorrowedTransactionsByEmployee(selectedEmployee.getEmpID(), conn);
+					
+					if(borrowedTransaction.isEmpty()) {
+						txtReminder.setText("No borrowed equipment for " + selectedEmployee.getEmpName());
+						return;
+					}
+					
+					StringBuilder remindersText = new StringBuilder();
+					
+					// 2. Iterate through all borrowed transactions
+					for(Transaction t : borrowedTransaction) {
+						
+						// 3. Make a reminder object and register it to Transaction
+						Reminder reminder = new Reminder();
+						t.registerObserver(reminder);
+						
+						// 4. Notify Observer -> generateReminder automatically + save to DB
+						t.notifyObservers();
+						
+						// 5. Retrieve reminder msg from object and add it to the display
+						remindersText.append(reminder.getReminderMSG()).append("\n");
+					}
+					
+					// 6. Display all reminder in the txtReminder text area
+					txtReminder.setText(remindersText.toString());
+					
+				}catch (SQLException ex) {
+					ex.printStackTrace();
+					txtReminder.setText("Error loading reminders.");
+				}
 			}
 		});
 		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
@@ -294,6 +334,12 @@ public class MainApp extends JFrame {
 		// --- JTextArea Reminder ---
 		txtReminder = new JTextArea();
 		txtReminder.setEditable(false);
+		
+		txtReminder.setFont(txtReminder.getFont().deriveFont(Font.ITALIC));
+		txtReminder.setForeground(Color.gray);
+		
+		txtReminder.setBorder(BorderFactory.createTitledBorder("Reminders"));
+		
 		JScrollPane scrollReminder = new JScrollPane(txtReminder);
 		splitPane.setBottomComponent(scrollReminder);
 

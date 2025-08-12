@@ -215,4 +215,28 @@ public class TransactionDAO {
 		    return txns;
 		}
 		
+		public static List<Transaction> getBorrowedTransactionsByEmployee(int empID, Connection conn) throws SQLException {
+			List<Transaction> transactions = new ArrayList<>();
+			
+			String strSQL = "SELECT * FROM Transaction WHERE empID = ? AND transactionStatus = 'Borrowed'";
+			
+			try(PreparedStatement ps = conn.prepareStatement(strSQL)){
+				ps.setInt(1, empID);
+				try(ResultSet rs = ps.executeQuery()){
+					while(rs.next()) {
+						Transaction t = new Transaction();
+						
+						    t.setTransactionID(rs.getInt("transactionID"));
+		                    t.setEmployee(EmployeeDAO.getEmployeeByID(conn, rs.getInt("empID")));
+		                    t.setEquipment(EquipmentDAO.getEquipmentByID(conn, rs.getInt("equipmentID")));
+		                    t.setExpectedReturnDate(rs.getDate("expectedReturnDate").toLocalDate());
+		                    t.setTransactionStatus(TransactionStatus.valueOf(rs.getString("transactionStatus")));
+		                    
+						transactions.add(t);
+					}
+				}
+			}
+			return transactions;
+		}
+		
 }

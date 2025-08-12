@@ -23,7 +23,10 @@ public class Transaction implements Subject {
     // Observer list
     private List<Observer> observers = new ArrayList<>();
     
-    // Constructor
+    // Constructors
+    public Transaction() {
+    	// empty
+    }
 	public Transaction(int transactionID, Employee employee, Equipment equipment, Order order, LocalDate orderDate,
 			LocalDate borrowDate, LocalDate expectedReturnDate, TransactionStatus transactionStatus) {
 		super();
@@ -57,17 +60,29 @@ public class Transaction implements Subject {
 		}
 	}
 	
-	// Getters
+	// Getters and Setters
 	public int getTransactionID() {
 		return transactionID;
+	}
+	
+	public void setTransactionID(int transactionID) {
+		this.transactionID = transactionID;
 	}
 
 	public Employee getEmployee() {
 		return employee;
 	}
+	
+	public void setEmployee(Employee employee) {
+		this.employee = employee;
+	}
 
 	public Equipment getEquipment() {
 		return equipment;
+	}
+	
+	public void setEquipment(Equipment equipment) {
+		this.equipment = equipment;
 	}
 
 	public Order getOrder() {
@@ -84,6 +99,10 @@ public class Transaction implements Subject {
 
 	public LocalDate getExpectedReturnDate() {
 		return expectedReturnDate;
+	}
+	
+	public void setExpectedReturnDate(LocalDate expectedReturnDate) {
+		this.expectedReturnDate = expectedReturnDate;
 	}
 	
 	public TransactionStatus getTransactionStatus() {
@@ -103,11 +122,7 @@ public class Transaction implements Subject {
 		this.returnDate = returnDate;
 		notifyObservers();
 	}
-	
-	// Method specifically used to notify observer, manually called
-	public void notifyTransactionChanged() {
-		notifyObservers();
-	}
+
 	
 	@Override
 	public String toString() {
