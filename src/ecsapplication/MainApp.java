@@ -2,6 +2,8 @@ package ecsapplication;
 
 import java.awt.EventQueue;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import javax.swing.JFrame;
@@ -10,7 +12,6 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.text.DefaultCaret;
 
 import ecsapplication.enums.EquipmentCondition;
 import ecsapplication.enums.EquipmentStatus;
@@ -28,12 +29,10 @@ import java.io.IOException;
 import java.awt.event.ActionEvent;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
-import javax.swing.SwingUtilities;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 
@@ -63,7 +62,7 @@ public class MainApp extends JFrame {
 	private JTextArea txtReminder;
 	private JTable tblOrders;
 	private JScrollPane scrollPane_1;
-	private JTable tblEquipment;
+	private JTable tblViewRecord;
 
 	/**
 	 * Launch the application.
@@ -221,6 +220,7 @@ public class MainApp extends JFrame {
 		panel.add(btnCheckReminder);
 		
 		comboEmployees = new JComboBox();
+		
 		comboEmployees.setPreferredSize(new java.awt.Dimension(120, 25));
 		panel.add(comboEmployees);
 		
@@ -293,7 +293,7 @@ public class MainApp extends JFrame {
 
 			            // Refresh table so that the change is visible
 			            refreshOrdersTable();
-			            refreshEquipmentTable();
+			   
 			        } else {
 			            JOptionPane.showMessageDialog(MainApp.this, "Please select an employee first.");
 			        }
@@ -360,19 +360,124 @@ public class MainApp extends JFrame {
 		tblOrders = new JTable();
 		scrollPane_1.setViewportView(tblOrders);
 
-		// ========== EQUIPMENT PANEL ========== //
-		JPanel equipmentPanel = new JPanel();
-		equipmentPanel.setLayout(new BorderLayout());
-		tabbedPane.addTab("Equipment", equipmentPanel);
+		// ========== VIEW RECORD PANEL ========== //
+		JPanel viewRecordPanel = new JPanel();
+		viewRecordPanel.setLayout(new BorderLayout());
+		tabbedPane.addTab("View Record", viewRecordPanel);
 
-		tblEquipment = new JTable();
-		JScrollPane scrollPaneEquipment = new JScrollPane(tblEquipment);
-		equipmentPanel.add(scrollPaneEquipment, BorderLayout.CENTER);
+		tblViewRecord = new JTable();
+		JScrollPane scrollPaneViewRecord = new JScrollPane(tblViewRecord);
+		viewRecordPanel.add(scrollPaneViewRecord, BorderLayout.CENTER);
 		
+		// --- Export CSV Button---
+		JButton btnExportCSV = new JButton("Export to CSV");
+		btnExportCSV.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// Ensures an employee is selected
+				Employee selectedEmployee = (Employee) comboEmployees.getSelectedItem();
+				if (selectedEmployee == null) {
+					JOptionPane.showMessageDialog(null, "Please select an employee first.");
+					return;
+				}
+
+				// Open JFileChooser to save file
+				JFileChooser fileChooser = new JFileChooser();
+				
+				// personalize dialog title with employee name
+				String empName = (selectedEmployee != null && selectedEmployee.getEmpName() != null) ? selectedEmployee.getEmpName() : "Employee";
+				
+				fileChooser.setDialogTitle("Save " + empName + "'s Records CSV");
+				FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files", "csv");
+				fileChooser.setFileFilter(filter);
+
+				int userSelection = fileChooser.showSaveDialog(null);
+				if (userSelection == JFileChooser.APPROVE_OPTION) {
+					File fileToSave = fileChooser.getSelectedFile();
+					String filePath = fileToSave.getAbsolutePath();
+
+					// Add .csv extension
+					if (!filePath.toLowerCase().endsWith(".csv")) {
+						filePath += ".csv";
+					}
+
+					try {
+						// Export contents of JTable 'View Record'
+						CSVExporter.exportToCSV(tblViewRecord, filePath);
+						JOptionPane.showMessageDialog(null, 
+								"Successfully exported View Record to:\n" + filePath);
+					} catch (IOException ex) {
+						ex.printStackTrace();
+						JOptionPane.showMessageDialog(null, 
+								"Failed to export View Record.\nError: " + ex.getMessage());
+					}
+				}
+			}
+
+		});
+		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		buttonPanel.add(btnExportCSV);
+		viewRecordPanel.add(buttonPanel, BorderLayout.SOUTH);
+		
+		// calls refresh view record
+		comboEmployees.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+						
+				Employee selectedEmployee = (Employee) comboEmployees.getSelectedItem();
+				if(selectedEmployee != null) {
+					refreshViewRecordTable(selectedEmployee);
+				}
+			}
+		});
+				
 		FillTable();
 
 	}
 	
+	// populate the View Record panel
+	private void refreshViewRecordTable(Employee emp) {
+		
+		// calls the viewRecord method from the Employee class to retrieve all transactions related to employees emp
+		List<Transaction> transactions = emp.viewRecord();
+		
+		if(transactions.isEmpty()) {
+			JOptionPane.showMessageDialog(this, "No records are available for this employee.");
+		}
+		
+		String[] columnNames = { "Transaction ID", "Equipment Name", "Borrow Date",
+								  "Expected Return Date", "Return Date", "Status", "Late" };
+		
+		DefaultTableModel model = new DefaultTableModel(columnNames, 0);
+		
+		// use to check for late transactions
+		LocalDate today = LocalDate.now();
+		
+		for(Transaction t : transactions) {
+			
+			// calculate late transactions
+			String lateInfo = "No";
+			if(t.getTransactionStatus() == TransactionStatus.Borrowed && t.getExpectedReturnDate() != null) {
+				long daysLate = ChronoUnit.DAYS.between(t.getExpectedReturnDate(), today);
+				if(daysLate > 0 ) {
+					lateInfo = daysLate + " days";
+				}
+			}
+			
+			Object[] row = {
+				t.getTransactionID(),
+				t.getEquipment().getEquipmentName(),
+				t.getBorrowDate() != null ? t.getBorrowDate().toString() : "",
+				t.getExpectedReturnDate() != null ? t.getExpectedReturnDate().toString() : "",
+				t.getReturnDate() != null ? t.getReturnDate().toString() : "",
+				t.getTransactionStatus(),
+				lateInfo
+			};
+			model.addRow(row);
+		}
+		tblViewRecord.setModel(model);
+	}
+
 	// order dialog is invoked after employee clicks the "Order" button
 	private void openOrderDialog(Employee employee) {
 	    JDialog dialog = new JDialog(this, "Order Equipment for " + employee.getEmpName(), true);
@@ -508,6 +613,9 @@ public class MainApp extends JFrame {
 
 	            FillTable();
 	            
+	            // refresh View Record table after return
+	            refreshViewRecordTable(employee);
+	            
 	        } catch (Exception ex) {
 	            ex.printStackTrace();
 	            if (conn != null) {
@@ -613,14 +721,14 @@ public class MainApp extends JFrame {
 	            return;
 	        }
 	        
-	        Transaction newTxn = employee.checkOut(selectedEquipment);
-	        
 	        // Confirmation from employee
 	        int confirm = JOptionPane.showConfirmDialog(dialog,
     		        "Are you sure you want to check out:\n" + equipmentName + " (ID: " + equipmentID + ")",
     		        "Confirm Checkout", JOptionPane.YES_NO_OPTION);
 	        
 	        if(confirm == JOptionPane.YES_OPTION) {
+	        	Transaction newTxn = employee.checkOut(selectedEquipment);
+	        	
 	        	try (Connection conn = DBConnect.getInstance().getConnection()){
 	        		conn.setAutoCommit(false);
 	        		
@@ -635,13 +743,22 @@ public class MainApp extends JFrame {
 	        		// records who and when equipment was checked out
 	        		String insertSQL = "INSERT INTO transaction (empID, equipmentID, borrowDate, expectedReturnDate, transactionStatus)" +
 	        		                   "VALUES (?, ?, ?, ?, ?)";
-	        		try (PreparedStatement stmtInsert = conn.prepareStatement(insertSQL)){
+	        		try (PreparedStatement stmtInsert = conn.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS)){
 	        			stmtInsert.setInt(1, newTxn.getEmployee().getEmpID());
 	        			stmtInsert.setInt(2, newTxn.getEquipment().getEquipmentID());
 	        			stmtInsert.setDate(3, newTxn.getBorrowDate() != null ? java.sql.Date.valueOf(newTxn.getBorrowDate()) : null);
 	        			stmtInsert.setDate(4, newTxn.getExpectedReturnDate() != null ? java.sql.Date.valueOf(newTxn.getExpectedReturnDate()) : null);
 	        			stmtInsert.setString(5, newTxn.getTransactionStatus().name());
 	        			stmtInsert.executeUpdate();
+	        			
+	        			// take generated transactionID - Fix for TransactionID of zero after checking out equipment
+	        			try(ResultSet rs = stmtInsert.getGeneratedKeys()){
+	        				if(rs.next()) {
+	        					int generatedID = rs.getInt(1);
+	        					newTxn.setTransactionID(generatedID);
+	        				}
+	        			}
+	        			
 	        		}
 	        		
 	        		conn.commit();    // saved changes to database
@@ -649,6 +766,7 @@ public class MainApp extends JFrame {
 	        		JOptionPane.showMessageDialog(dialog, "Successful checkout for: " + equipmentName);
 	        		dialog.dispose();
 	        		
+	        		// refresh transaction table
 	        		FillTable();
 	        		
 	        	}catch (Exception ex) {
@@ -711,7 +829,7 @@ public class MainApp extends JFrame {
 	        String[] columnNames = {
 	            "Transaction ID", "Employee Name", "Employee Skill",
 	            "Equipment Name", "Required Skill", "Equipment Condition",
-	            "Order Date", "Borrow Date", "Expected Return Date",
+	            "Borrow Date", "Expected Return Date",
 	            "Transaction Status"
 	        };
 	        
@@ -726,10 +844,9 @@ public class MainApp extends JFrame {
 	            data[i][3] = t.getEquipment().getEquipmentName();
 	            data[i][4] = t.getEquipment().getRequiredSkill().name();
 	            data[i][5] = t.getEquipment().getEquipmentCondition().name();
-	            data[i][6] = t.getOrder() != null ? t.getOrder().getOrderDate() : null;
-	            data[i][7] = t.getBorrowDate();
-	            data[i][8] = t.getExpectedReturnDate();
-	            data[i][9] = t.getTransactionStatus().name();
+	            data[i][6] = t.getBorrowDate();
+	            data[i][7] = t.getExpectedReturnDate();
+	            data[i][8] = t.getTransactionStatus().name();
 	        }
 	        
 	        // Set new model to JTable
@@ -805,28 +922,4 @@ public class MainApp extends JFrame {
 	        JOptionPane.showMessageDialog(this, "Failed to refresh orders.");
 	    }
 	}
-	
-	 private void refreshEquipmentTable() {
-	        try (Connection conn = DBConnect.getInstance().getConnection()) {
-	            List<Equipment> equipmentList = EquipmentDAO.getAllEquipment(conn);
-
-	            String[] columnNames = { "Equipment ID", "Name", "Status", "Required Skill" };
-	            DefaultTableModel model = new DefaultTableModel(columnNames, 0);
-
-	            for (Equipment eq : equipmentList) {
-	                Object[] row = {
-	                    eq.getEquipmentID(),
-	                    eq.getEquipmentName(),
-	                    eq.getStatus(),
-	                    eq.getRequiredSkill()
-	                };
-	                model.addRow(row);
-	            }
-	            tblEquipment.setModel(model);
-
-	        } catch (SQLException e) {
-	            e.printStackTrace();
-	            JOptionPane.showMessageDialog(this, "Failed to load equipment.");
-	        }
-	    }
 }

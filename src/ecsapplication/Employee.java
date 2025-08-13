@@ -210,8 +210,18 @@ public class Employee {
         return null;
     }
 
+    // Retrieves a list of transactions based on employeeID
     public List<Transaction> viewRecord() {
-        return empTransaction;
+        
+    	List<Transaction> transactions = new ArrayList<>();
+    	
+    	try(Connection conn = DBConnect.getInstance().getConnection()){
+    		transactions = TransactionDAO.getTransactionsByEmployeeID(conn, this.empID);
+    		
+    	}catch (SQLException e){
+    		e.printStackTrace();
+    	}
+    	return transactions;
     }
     
     @Override
