@@ -32,11 +32,16 @@ It supports the following features:
 
 ## Obtaining the ECS Project
 
+>**Click Here**: [Link to ECS Project in GitHub](https://github.com/rayk210/ECSRepo_Team6.git)
+
  1. Download ZIP file from GitHub
 
-    -Extract contents to local folder
+    <img width="750" height="450" alt="image" src="https://github.com/user-attachments/assets/7d401a10-d0d0-45ff-9f9a-e16eeb27fc41" />
+
+
+ 2. Extract contents to local folder
     
- 2. The extracted folder will contain the following:
+ 3. The extracted folder will contain the following:
 
     -Java source code in the **src/ecsapplication** folder
 
@@ -53,42 +58,78 @@ It supports the following features:
 1. **Start MySQL Workbench**
    
    -Ensure MySQL server is running.
-   
-2. **Create New Schema**
-   
-   -Right-click on **Schemas** Navigator and choose **Create Schema**
 
-   -Name the schema 'ceis400courseproject'
+   -Press the **plus** icon
 
-3. **Restore SQL Dump**
+     <img width="750" height="450" alt="image" src="https://github.com/user-attachments/assets/ed169261-b57a-4dc7-8537-a1918a93c10b" />
 
-   Import the **ceis400courseproject_2.sql** dump file into the **ceis400courseproject** schema created before.
+   -Setup New Connection
 
-   In MySQL Workbench, do the following:
+     <img width="750" height="450" alt="image" src="https://github.com/user-attachments/assets/633a6028-83df-43ed-a737-27fc6bbf8e70" />
 
-   -Navigate to **Server --> Data Import**
+     >**Note**: Enter the following:
+     >
+     >**Connection Name:** ceis400courseproject400
+     >
+     >**Connection Method:** Standard(TCP/IP)
+     >**Hostname:** localhost
+     >
+     >**Port:** 3306
+     >
+     >**Username:** root
+     >
+     >**Password:** devry123
+  
+   -Click on Project:
    
-   -Choose **Import from Self-Contained File**
+     <img width="549" height="335" alt="image" src="https://github.com/user-attachments/assets/24869211-4fb6-4bea-8cd7-13202ebb84a0" />
 
-   -Browse and select **ceis400courseproject_2.sql**
-   
-   -Set **Default Target Schema** (ceis400courseproject)
+   -Click on the folder SQL button:
 
-   -Highlight **Dump Structure and Data --> Start Import**
+     <img width="81" height="92" alt="image" src="https://github.com/user-attachments/assets/949cd578-7d8a-47e9-ab91-9fd968882508" />
 
-4. **Verify Database Tables**
+   -Select the .SQL dump file **ceis400courseproject_2.sql** in the unzipped file from GitHub:
 
-   Ensure the following tables are present:
+     <img width="750" height="450" alt="image" src="https://github.com/user-attachments/assets/07534bb2-baff-4745-b810-1886472b3ffa" />
+
+   -Add this piece of code to the top at line 1:
    
-   -employee
+     CREATE DATABASE IF NOT EXISTS ceis400courseproject;
    
-   -equipment
+     USE ceis400courseproject;
+
+   -Select lightning bolt icon to execute query:
+
+     <img width="77" height="69" alt="image" src="https://github.com/user-attachments/assets/0f6b701b-3ee1-4dd4-8009-95bbc3c35148" />
+
+   -Click on schemas and the rotating errors to reload.
+
+     <img width="400" height="300" alt="image" src="https://github.com/user-attachments/assets/3dd84dd0-8dad-4821-b1b0-4ac479105292" />
+
+   -Right click and set **ceis400courseproject** as **Default Schema**
+
+     <img width="450" height="300" alt="image" src="https://github.com/user-attachments/assets/1e9f3449-419a-47e2-b013-fdda45e7c9ae" />
+
+2. **Verify Database Tables**
+
+   Run this code in a new query tab:
+
+   USE ceis400courseproject;
+   SHOW TABLES;
+
+   SELECT * FROM employee;
    
-   -order
+   SELECT * FROM equipment LIMIT 5;
    
-   -reminder
+   SELECT * FROM `order` LIMIT 5;
    
-   -transaction
+   SELECT * FROM transaction LIMIT 5;
+   
+   SELECT * FROM reminder LIMIT 5;
+
+   >**Note**: **order** must be enclosed in backquotes **``**
+
+   <img width="627" height="461" alt="image" src="https://github.com/user-attachments/assets/3a009040-d57a-4f88-b06b-e09adea5bb95" />
 
 ## Running the ECS System
 
@@ -98,15 +139,22 @@ It supports the following features:
 
   -Navigate to **File** --> **Import** --> **Existing Projects into Workspace**
 
+  <img width="550" height="500" alt="image" src="https://github.com/user-attachments/assets/3246561b-8e4e-4d21-ae99-f7e5b87654e1" />
+
   -Select the ECS project folder that was extracted before
+
+  <img width="550" height="700" alt="image" src="https://github.com/user-attachments/assets/9bd2f33d-b16f-4981-b6dc-e254cd43c555" />
   
   -Ensure **lib** folder contains **mysql-connector-j-9.4.0.jar**
+
+  <img width="404" height="160" alt="image" src="https://github.com/user-attachments/assets/480baffc-0dc1-4842-bfc3-93b55660cd8d" />
+
 
 ### 2. Configure Database Connection
 
   -Open the **DBConnect.java** file
 
-  -Ensure that the JDBC url, username, and password match your MySQL setup:
+  -Ensure that the JDBC url, username, and password match your MySQL setup done in the **Setup Database** part above:
   
     private static final String url = "jdbc:mysql://localhost:3306/ceis400courseproject";
     
@@ -128,6 +176,9 @@ It supports the following features:
 ### 4. Build and Run
 
   -Right-click on **MainApp.java** and **Run As --> Java Application**
+
+  <img width="600" height="800" alt="image" src="https://github.com/user-attachments/assets/51b52d54-adc6-4804-b330-3399188a332a" />
+
   
 ## Use the ECS System's Features
 
