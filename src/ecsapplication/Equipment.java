@@ -1,3 +1,13 @@
+/**
+ * Equipment.java
+ * This class represents an equipment entity in the ECS system.
+ * It is responsible for storing important information about equipment
+ * such as ID, name, condition, status, and the skill required to use it.
+ * The Equipment class also facilitates the process of checking out, 
+ * returning, ordering, and tracking of the equipment.
+ */
+
+
 package ecsapplication;
 
 import ecsapplication.enums.SkillClassification;

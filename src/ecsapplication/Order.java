@@ -1,3 +1,10 @@
+/**
+ * Order.java
+ * This class represents an entity in the ECS system where an order
+ * can be made for a piece of equipment. This class stores important
+ * information, such as who has ordered what equipment and when the order was made.
+ */
+
 package ecsapplication;
 
 import ecsapplication.enums.OrderStatus;

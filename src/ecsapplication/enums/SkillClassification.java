@@ -1,3 +1,11 @@
+/**
+ * SkillClassification.java
+ * This enum defines the possible employee skill classifications in the ECS system.
+ * These classifications are used for equipment filtering during the checkout
+ * and ordering processes so that an employee can only obtain equipment that is
+ * suitable for their area of expertise.
+ */
+
 package ecsapplication.enums;
 
 public enum SkillClassification {
@@ -8,6 +16,7 @@ public enum SkillClassification {
 	Welder,
 	Carpenter;
 	
+	// Converts a case-insensative string to the corresponding enum condition
 	public static SkillClassification fromString(String value) {
 	    if (value == null) {
 	        return null;
@@ -17,6 +26,7 @@ public enum SkillClassification {
 	            return sc;
 	        }
 	    }
+	    // If no match is found
 	    throw new IllegalArgumentException("No enum constant for: " + value);
 	}
 }

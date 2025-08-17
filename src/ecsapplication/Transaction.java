@@ -1,3 +1,19 @@
+/**
+ * Transaction.java
+ * Represents an entity in the ECS system that processes checking out
+ * and returning equipment done by employees. This class records important
+ * information related to those activities, such as the date a piece of 
+ * equipment was borrowed and returned, as well as the transaction status. 
+ * Transaction functions to provide a historical record of activities done
+ * throughout the entire life cycle of borrowing equipment.
+ *   
+ * This class acts as the Subject or Observable in the Observer design pattern.
+ * It manages a list of observers and utilizes a registerObserver(), removeObserver(),
+ * and notifyObservers() method, which it adopts from the Subject interface it implements.
+ */
+
+
+
 package ecsapplication;
 
 import java.time.LocalDate;

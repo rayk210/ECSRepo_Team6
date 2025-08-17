@@ -1,3 +1,13 @@
+/**
+ * Employee.java
+ * Employee is an entity who can perform major operational tasks
+ * such as checking out and returning equipment, placing and canceling
+ * orders for equipment, and reviewing reminders. This class ensures 
+ * that all interactions with equipment and orders are handled according
+ * to the business rules determined.
+ */
+
+
 package ecsapplication;
 
 import ecsapplication.enums.SkillClassification;
@@ -89,6 +99,8 @@ public class Employee {
 		return order;
 	}
 	
+	// Enables an employee to check out equipment
+	// Sets the transaction status to ‘Borrowed’
 	public Transaction checkOut(Equipment equipment) {
 	    LocalDate today = LocalDate.now();
 	    LocalDate expectedReturn = today.plusWeeks(7);
@@ -110,6 +122,8 @@ public class Employee {
 	    return transaction;
     }
 
+	// Enables an employee to order equipment
+	// Sets the order status to ‘Confirmed’ and equipment status to ‘Ordered’
     public String orderEquipment(Equipment equipment) {
     	// Validate status
         if (equipment.getStatus() != EquipmentStatus.Available) {
@@ -143,6 +157,8 @@ public class Employee {
 
     }
     
+    // Enables an employee to cancel an order made
+    // Sets the order status to ‘Cancelled’ and equipment status to ‘Available’ so that it can be ordered or checked out again
     public String cancelOrder(int orderID) {
         try (Connection conn = DBConnect.getInstance().getConnection()) {
             // Retrieve order 
@@ -184,22 +200,24 @@ public class Employee {
     }
 
 
+    // Enables an employee to return equipment that they have previously checked out
+    // Sets the transaction status to ‘Returned’, equipment status to ‘Available’, and equipment condition to the one chosen by the employee
     public Transaction returnEquipment(int transactionID, EquipmentCondition condition) {
     	
     	for(Transaction txn : empTransaction) {
     		
-    		// ensures that the equipment being returned is indeed borrowed 
+    		// Ensures that the equipment being returned is indeed borrowed 
     		if (txn.getTransactionID() == transactionID && txn.getTransactionStatus() == TransactionStatus.Borrowed) {
     			LocalDate today = LocalDate.now();
     			
-    			// set return date and change transaction status to returned
+    			// Set return date and change transaction status to returned
     			txn.setReturnDate(today);
     			txn.setTransactionStatus(TransactionStatus.Returned);
     			
-    			// change equipment status to available
+    			// Change equipment status to available
     			Equipment eq = txn.getEquipment();
     			eq.setStatus(EquipmentStatus.Available);
-    			// change equipments condition
+    			// Change equipments condition
     			eq.setEquipmentCondition(condition);
     			
     			System.out.println("Transaction " + txn.getTransactionID() + " was successfully returned by: " + this.getEmpName());
@@ -211,6 +229,7 @@ public class Employee {
     }
 
     // Retrieves a list of transactions based on employeeID
+    // Used to display individual employee records for the View Record use case
     public List<Transaction> viewRecord() {
         
     	List<Transaction> transactions = new ArrayList<>();

@@ -1,12 +1,18 @@
+/**
+ * EquipmentStatus.java
+ * This enum defines the possible equipment statuses in the ECS system.
+ */
+
 package ecsapplication.enums;
 
 public enum EquipmentStatus {
 
-	Loaned,
+	Loaned,  // Checkout
 	Lost,
-	Available,
-	Ordered;
+	Available, // Returned
+	Ordered;   // Ordered
 	
+	// Converts a case-insensative string to the corresponding enum condition
 	public static EquipmentStatus fromString(String value) {
 	    if (value == null) {
 	        return null;
@@ -16,6 +22,7 @@ public enum EquipmentStatus {
 	            return es;
 	        }
 	    }
+	    // If no match is found
 	    throw new IllegalArgumentException("No enum constant for: " + value);
 	}
 }

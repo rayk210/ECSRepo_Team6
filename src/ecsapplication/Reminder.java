@@ -1,3 +1,16 @@
+/**
+ * Reminder.java
+ * The Reminder class acts as an Observer in the Observer design pattern.
+ * It listens for updates from the Subject (Transaction) and generates the appropriate
+ * reminder messages for employees, which is then stored in the database for persistent
+ * storage.
+ * 
+ * This class receives updates from Transaction through the update() method and then
+ * generates reminder messages based on due dates and employee data.
+ * These reminders are then stored in the database via ReminderDAO.
+ */
+
+
 package ecsapplication;
 
 import java.sql.Connection;
@@ -29,7 +42,9 @@ public class Reminder implements Observer{
 		generateReminder();
 	}
 
-	// Updates the transaction received from the Subject
+	// Called when this observer is notified by the Subject with a transaction update
+	// Updates internal state
+	// Generates a reminder message and persists it to the database
 	@Override
 	public void update(Transaction transaction) {
 		
@@ -41,13 +56,13 @@ public class Reminder implements Observer{
 		this.transaction = transaction;
 		this.employee = transaction.getEmployee();
 		
-		// set reminder date to today when updated
+		// Set reminder date to today when updated
 		this.reminderDate = LocalDate.now();
 		
-		// generate a new reminders based on up-to-date data
+		// Generate a new reminders based on up-to-date data
 		generateReminder();
 		
-		// save latest reminder to database
+		// Save latest reminder to database
 		try (Connection conn = DBConnect.getInstance().getConnection()) {
 	        ReminderDAO.saveReminder(this, conn);
 	    } catch (SQLException e) {
@@ -57,7 +72,6 @@ public class Reminder implements Observer{
 	}
 	
 	// Getters and Setters
-	
 	public int getReminderID() {
 		return reminderID;
 	}
@@ -98,7 +112,7 @@ public class Reminder implements Observer{
 		this.reminderMSG = reminderMSG;
 	}
 
-	// Generate reminder
+	// Generates a reminder message based on the transactions state
 	public void generateReminder() {
 		if (transaction == null || employee == null) {
 	        reminderMSG = "Reminder Error: Transaction or Employee is missing.";
@@ -123,13 +137,19 @@ public class Reminder implements Observer{
 	    LocalDate reminderDate = LocalDate.now();
 	    long daysLeft = ChronoUnit.DAYS.between(reminderDate, dueDate);
 
+	    // Compares todays date with the expected return date
+	    // This condition indicates that equipment is overdue
 	    if (reminderDate.isAfter(dueDate)) {
 	        reminderMSG = empName + " has an overdue item: " + equipmentName + 
 	                      ". Due on: " + dueDate;
+	      
+	    // This condition indicates an employee should return equipment soon
 	    } else if (!reminderDate.isAfter(dueDate) &&
 	               dueDate.minusDays(2).isBefore(reminderDate)) {
 	        reminderMSG = empName + " should return: " + equipmentName +
 	                      " by " + dueDate;
+	        
+	    // This indicates no action is needed at this time
 	    } else {
 	        reminderMSG = "No action needed for: " + equipmentName + ". Time left to return: " + daysLeft + " days.";
 	    }

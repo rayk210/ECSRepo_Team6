@@ -1,3 +1,9 @@
+/**
+ * EquipmentDAO.java
+ * A class that is responsible for accessing and manipulating equipment data.
+ * Follows a Data Access Object pattern to encapsulate data from the rest of the application.
+ */
+
 package ecsapplication;
 
 import java.sql.Connection;
@@ -13,7 +19,7 @@ import ecsapplication.enums.SkillClassification;
 
 public class EquipmentDAO {
 
-	// Get all equipment
+	    // Retrieves a list of all equipment name, ID, status, and the required skill needed from the equipment table in MySQL
 		public static List<Equipment> getAllEquipment(Connection conn) throws SQLException {
 		    List<Equipment> equipmentList = new ArrayList<>();
 
@@ -39,6 +45,8 @@ public class EquipmentDAO {
 		}
 		
 		// Used by openCheckoutDialog method in mainapp to get available equipment by skill
+		// Retrieves a list of all equipment that currently has an ‘Available’ status and corresponds to with a certain skill classification for an employee
+		// Supports filtering equipment based on employee skills
 		public static List<Equipment> getAvailableEquipmentBySkill(Connection conn, SkillClassification skill) throws SQLException {
 		    List<Equipment> equipmentList = new ArrayList<>();
 		    String strSQL = "SELECT equipmentID, equipmentName, equipmentCondition, equipStatus, requiredSkill " +
@@ -46,8 +54,8 @@ public class EquipmentDAO {
 		    
 		    try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
 		    	
-		    	// debugging
-		    	// verify skill and if sql query is executed properly through console log
+		    	// Debugging
+		    	// Verify skill and if sql query is executed properly through console log
 		    	System.out.println("Debug - Skill: " + skill.toString());
 		    	System.out.println("Debug - Running SQL: " + strSQL);
 
@@ -73,8 +81,10 @@ public class EquipmentDAO {
 		    }
 		    return equipmentList;
 		}
-		
-		// update equipment status and equipment condition
+
+		// Used to update the availability status of equipment in the database based on equipment ID
+		// This method is invoked when employees return or checkout equipment to reflect a change in state
+		// Manages the state of equipment
 		public static void updateEquipment(Connection conn, Equipment eq) throws SQLException {
 		    String strSQL = "UPDATE equipment SET equipStatus = ?, equipmentCondition = ? WHERE equipmentID = ?";
 
@@ -86,7 +96,7 @@ public class EquipmentDAO {
 		    }
 		}
 		
-		// update equipment status
+		// Update equipment status
 		public static boolean updateEquipmentStatus(int equipmentID, EquipmentStatus status) {
 		    String strSQL = "UPDATE equipment SET equipStatus = ? WHERE equipmentID = ?";
 		    try (Connection conn = DBConnect.getInstance().getConnection();
@@ -101,7 +111,7 @@ public class EquipmentDAO {
 		    }
 		}
 		
-		// gets equipment by ID
+		// Retrieves equipment based on equipmentID from the equipment table in MySQL
 		public static Equipment getEquipmentByID(Connection conn, int equipmentID) throws SQLException {
 		    String strSQL = "SELECT * FROM equipment WHERE equipmentID = ?";
 		    
@@ -118,7 +128,7 @@ public class EquipmentDAO {
 		    }
 		}
 		
-		// functions to map a ResultSet row from the equipment table to an equipment object
+		// Functions to map a ResultSet row from the equipment table to an equipment object
 				public static Equipment mapResultSetToEquipment(ResultSet rs) throws SQLException {
 				    int equipmentID = rs.getInt("equipmentID");
 				    String equipmentName = rs.getString("equipmentName");
@@ -134,7 +144,9 @@ public class EquipmentDAO {
 				    return equipment;
 				}
 				
-				// used to filter ordering equipment by equipment status AND required skill
+				// Used to filter ordering equipment by equipment status AND required skill
+				// Business rules are implemented where not all employees can order the same equipment
+				// This method functions as a safety feature
 				public static List<Equipment> getOrderableEquipmentBySkill(Connection conn, SkillClassification skill) throws SQLException {
 				    List<Equipment> list = new ArrayList<>();
 				    String strSQL = "SELECT * FROM equipment WHERE equipStatus = 'Available' AND requiredSkill = ?";

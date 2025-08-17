@@ -1,3 +1,9 @@
+/**
+ * EquipmentCondition.java
+ * This enum defines the possible conditions of equipment in the ECS system.
+ * The employee is prompt to select a state upon returning equipment.
+ */
+
 package ecsapplication.enums;
 
 public enum EquipmentCondition {
@@ -6,6 +12,7 @@ public enum EquipmentCondition {
 	Damaged,
 	Lost;
 	
+	// Converts a case-insensative string to the corresponding enum condition
 	public static EquipmentCondition fromString(String value) {
 	    if (value == null) {
 	        return null;
@@ -15,6 +22,7 @@ public enum EquipmentCondition {
 	            return ec;
 	        }
 	    }
+	    // If no match is found
 	    throw new IllegalArgumentException("No enum constant for: " + value);
 	}
 }

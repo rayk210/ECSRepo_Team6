@@ -1,3 +1,13 @@
+/**
+ * DBConnect.java
+ * The DBConnect class provides a centralized interface to manage a connection
+ * to the MySQL database that is used by the ECS system. 
+ * This class is implemented using a Singleton design pattern which ensures 
+ * that only one active connection is used throughout the whole application.
+ * This pattern enables the ECS system to manage its resources as well
+ * as maintain consistency in transaction data.
+ */
+
 package ecsapplication;
 
 import java.sql.*;
@@ -24,17 +34,17 @@ public class DBConnect {
 
     // Public method to obtain a single instance of DBConnect
     // Synchronized prevents another thread from accessing this method
+    // Singleton instance getter
     public static synchronized DBConnect getInstance() throws SQLException {
         if (instance == null || instance.getConnection().isClosed()) {
             instance = new DBConnect();
-        }else if (instance.connection == null || instance.connection.isClosed()) {
-        	instance.connection = DriverManager.getConnection(url, username, password);
         }
         return instance;
     }
 
-    // Getter method for Connection
-    public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(url, username, password);
+    // Getter for connection
+    public Connection getConnection() {
+        return connection;
     }
+
 }

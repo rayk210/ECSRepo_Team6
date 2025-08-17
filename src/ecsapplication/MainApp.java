@@ -1,3 +1,28 @@
+/**
+ * MainApp.java
+ * Entry point for the ECS system.
+ * The ECS system is a Java-based desktop application that's designed to manage the life-cycle of equipment in GB manufacturing.
+ * It supports the following features:
+ *   Checkout Equipment
+ *   Return Equipment
+ *   Order Equipment
+ *   Receive Reminders
+ *   View Records
+ *   
+ * The program adheres to the following design patterns:
+ *   Singleton: DBConnect class
+ *   Observer: Reminder class (Observer) and Transaction class (Subject)
+ *   
+ * This class launches the GUI that's built using the Java Swing toolkit.
+ * The Swing components include:
+ *   JFrame: main application window
+ *   JPanel: used for organizing sections of the UI
+ *   JTable: display data related to employees, equipment, transactions, orders and reminders
+ *   JDialog: modal dialog that appear during actions performed
+ *   JTextArea: display reminders
+ *   JScrollPane: gives the ability to scroll with tables
+ */
+
 package ecsapplication;
 
 import java.awt.EventQueue;
@@ -105,6 +130,8 @@ public class MainApp extends JFrame {
 		// Action listener for export transaction button
 		btnExportTransaction.addActionListener(new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
+		    	
+		    	// Open JFileChooser to save file
 		        JFileChooser fileChooser = new JFileChooser();
 		        fileChooser.setDialogTitle("Save Transactions CSV");
 		        FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files", "csv");
@@ -135,6 +162,8 @@ public class MainApp extends JFrame {
 		JButton btnExportOrders = new JButton("Export Orders");
 		btnExportOrders.addActionListener(new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
+		    	
+		    	// Open JFileChooser to save file
 		        JFileChooser fileChooser = new JFileChooser();
 		        fileChooser.setDialogTitle("Save Orders CSV");
 		        FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files", "csv");
@@ -170,7 +199,7 @@ public class MainApp extends JFrame {
 		
 		btnCheckReminder = new JButton("Check Reminder");
 		
-		// Action listener for CheckReminder button
+		// Action listener for Check Reminder button
 		btnCheckReminder.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
@@ -224,12 +253,12 @@ public class MainApp extends JFrame {
 		comboEmployees.setPreferredSize(new java.awt.Dimension(120, 25));
 		panel.add(comboEmployees);
 		
-		// load Employee
+		// Load Employees
 		loadEmployeesIntoComboBox();
 		comboEmployees.setSelectedIndex(-1);
 		
 		
-		// checkout equipment button event handler
+		// Checkout equipment button event handler
 		btnCheckoutEquipment = new JButton("Check Out Equipment");
 		btnCheckoutEquipment.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -245,7 +274,7 @@ public class MainApp extends JFrame {
 		panel.add(btnCheckoutEquipment);
 		
 		
-		// return equipment button
+		// Return equipment button
 		btnReturnEquipment = new JButton("Return Equipment");
 		btnReturnEquipment.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -259,7 +288,7 @@ public class MainApp extends JFrame {
 		});
 		panel.add(btnReturnEquipment);
 		
-		// order button event listener
+		// Order button event listener
 		btnOrderEquipment = new JButton("Order");
 		btnOrderEquipment.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -275,7 +304,7 @@ public class MainApp extends JFrame {
 		panel.add(btnOrderEquipment);
 		
 		
-		// cancel order button
+		// Cancel order button
 		btnCancelOrder = new JButton("Cancel");
 		btnCancelOrder.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -420,7 +449,7 @@ public class MainApp extends JFrame {
 		buttonPanel.add(btnExportCSV);
 		viewRecordPanel.add(buttonPanel, BorderLayout.SOUTH);
 		
-		// calls refresh view record
+		// Calls refresh view record
 		comboEmployees.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 						
@@ -435,10 +464,10 @@ public class MainApp extends JFrame {
 
 	}
 	
-	// populate the View Record panel
+	// Populate the View Record panel
 	private void refreshViewRecordTable(Employee emp) {
 		
-		// calls the viewRecord method from the Employee class to retrieve all transactions related to employees emp
+		// Calls the viewRecord() method from the Employee class to retrieve all transactions related to employees emp
 		List<Transaction> transactions = emp.viewRecord();
 		
 		if(transactions.isEmpty()) {
@@ -450,12 +479,12 @@ public class MainApp extends JFrame {
 		
 		DefaultTableModel model = new DefaultTableModel(columnNames, 0);
 		
-		// use to check for late transactions
+		// Use to check for late transactions
 		LocalDate today = LocalDate.now();
 		
 		for(Transaction t : transactions) {
 			
-			// calculate late transactions
+			// Calculate late transactions
 			String lateInfo = "No";
 			if(t.getTransactionStatus() == TransactionStatus.Borrowed && t.getExpectedReturnDate() != null) {
 				long daysLate = ChronoUnit.DAYS.between(t.getExpectedReturnDate(), today);
@@ -478,7 +507,7 @@ public class MainApp extends JFrame {
 		tblViewRecord.setModel(model);
 	}
 
-	// order dialog is invoked after employee clicks the "Order" button
+	// Order dialog is invoked after employee clicks the "Order" button
 	private void openOrderDialog(Employee employee) {
 	    JDialog dialog = new JDialog(this, "Order Equipment for " + employee.getEmpName(), true);
 	    dialog.setSize(600, 400);
@@ -551,7 +580,7 @@ public class MainApp extends JFrame {
 	    table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 	    JScrollPane scrollPane = new JScrollPane(table);
 	    
-	    // button to confirm the return
+	    // Button to confirm the return
 	    JButton btnConfirmReturn = new JButton("Confirm Return");
 	    btnConfirmReturn.addActionListener(e -> {
 	        int selectedRow = table.getSelectedRow();
@@ -562,7 +591,7 @@ public class MainApp extends JFrame {
 	        
 	        int transactionID = (int) table.getValueAt(selectedRow, 0);
 	        
-	        // ask employee to input the condition of the equipment when returning
+	        // Ask employees to input the condition of the equipment when returning
 	        EquipmentCondition condition = (EquipmentCondition) JOptionPane.showInputDialog(
 	            dialog,
 	            "Select condition of the equipment:",
@@ -578,7 +607,7 @@ public class MainApp extends JFrame {
 	            return;
 	        }
 	        
-	        // call returnEquipment from Employee class
+	        // Call returnEquipment() method from Employee class
 	        Transaction returnedTxn = employee.returnEquipment(transactionID, condition);
 	        
 	        if (returnedTxn == null) {
@@ -586,7 +615,7 @@ public class MainApp extends JFrame {
 	            return;
 	        }
 	        
-	        // troubleshoot 
+	        // Troubleshoot whether data is successfully retrieved
 	        System.out.println("=== Transaction Info Before DB Update ===");
 	        System.out.println("Transaction ID: " + returnedTxn.getTransactionID());
 	        System.out.println("Transaction Status: " + returnedTxn.getTransactionStatus());
@@ -595,46 +624,31 @@ public class MainApp extends JFrame {
 	        System.out.println("Equipment Status: " + returnedTxn.getEquipment().getStatus());
 	        System.out.println("Equipment Condition: " + returnedTxn.getEquipment().getEquipmentCondition());
 
-	        
-	        Connection conn = null;
-	        try {
-	            conn = DBConnect.getInstance().getConnection();
+	        // Get connection
+	        try (Connection conn = DBConnect.getInstance().getConnection()) {
 	            conn.setAutoCommit(false);
-	            
-	            
 
+	            // Update transaction status to Returned
 	            TransactionDAO.updateTransactionReturn(conn, returnedTxn);
+	            
+	            // Update equipment status
 	            EquipmentDAO.updateEquipment(conn, returnedTxn.getEquipment());
 
+	            // Commit changes to the database
 	            conn.commit();
 
 	            JOptionPane.showMessageDialog(dialog, "Equipment returned successfully.");
 	            dialog.dispose();
 
+	            // Refresh Transaction table
 	            FillTable();
 	            
-	            // refresh View Record table after return
+	            // Refresh View Record table
 	            refreshViewRecordTable(employee);
-	            
+
 	        } catch (Exception ex) {
 	            ex.printStackTrace();
-	            if (conn != null) {
-	                try {
-	                    conn.rollback();
-	                } catch (SQLException rollbackEx) {
-	                    rollbackEx.printStackTrace();
-	                }
-	            }
 	            JOptionPane.showMessageDialog(dialog, "Return failed: " + ex.getMessage());
-	        } finally {
-	            if (conn != null) {
-	                try {
-	                    conn.setAutoCommit(true);  // reset autocommit
-	                    
-	                } catch (SQLException closeEx) {
-	                    closeEx.printStackTrace();
-	                }
-	            }
 	        }
 
 	    });
@@ -658,15 +672,15 @@ public class MainApp extends JFrame {
 	    // table columns
 	    String[] columnNames = {"ID", "Name", "Condition", "Status", "Required Skill"};
 	    
-	    // retrieve data from mySql
-	    // two dimensional array used save data from equipment list
+	    // Retrieve data from MySQL database
+	    // Two dimensional array used save data from equipment list
 	    // [i] = equipment whereas second [] represents column
 	    Object[][] data = new Object[0][];
 	    try (Connection conn = DBConnect.getInstance().getConnection()) {
 	    	List<Equipment> equipmentList = EquipmentDAO.getAvailableEquipmentBySkill(conn, employee.getSkillClassification());
 	    	data = new Object[equipmentList.size()][5];
 	    	
-	    	// display message if no equipment is available for an employees skill
+	    	// Display message if no equipment is available for an employees skill
 	    	if(equipmentList.isEmpty()) {
 	    		JOptionPane.showMessageDialog(null, 
 	    				"No available equipment for: " + employee.getSkillClassification(),
@@ -693,7 +707,7 @@ public class MainApp extends JFrame {
 	    table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 	    JScrollPane scrollPane = new JScrollPane(table);
 
-	    // confirm checkout button
+	    // Confirm checkout button
 	    JButton btnConfirm = new JButton("Confirm Checkout");
 	    btnConfirm.addActionListener(e -> {
 	        int selectedRow = table.getSelectedRow();
@@ -701,7 +715,7 @@ public class MainApp extends JFrame {
 	            JOptionPane.showMessageDialog(dialog, "Please select an equipment to check out.");
 	            return;
 	        }
-	        // display ID and name that is chosen
+	        // Display ID and name that is chosen
 	        int equipmentID = (int) table.getValueAt(selectedRow, 0);
 	        String equipmentName = (String) table.getValueAt(selectedRow, 1);
 	        String equipmentCondition = (String) table.getValueAt(selectedRow, 2);
@@ -740,7 +754,7 @@ public class MainApp extends JFrame {
 	        		}
 	        		
 	        		// Insert new transaction
-	        		// records who and when equipment was checked out
+	        		// Records who and when equipment was checked out
 	        		String insertSQL = "INSERT INTO transaction (empID, equipmentID, borrowDate, expectedReturnDate, transactionStatus)" +
 	        		                   "VALUES (?, ?, ?, ?, ?)";
 	        		try (PreparedStatement stmtInsert = conn.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS)){
@@ -751,7 +765,7 @@ public class MainApp extends JFrame {
 	        			stmtInsert.setString(5, newTxn.getTransactionStatus().name());
 	        			stmtInsert.executeUpdate();
 	        			
-	        			// take generated transactionID - Fix for TransactionID of zero after checking out equipment
+	        			// Take generated transactionID - Fix for TransactionID of zero after checking out equipment
 	        			try(ResultSet rs = stmtInsert.getGeneratedKeys()){
 	        				if(rs.next()) {
 	        					int generatedID = rs.getInt(1);
@@ -761,12 +775,12 @@ public class MainApp extends JFrame {
 	        			
 	        		}
 	        		
-	        		conn.commit();    // saved changes to database
+	        		conn.commit();    // save changes to database
 	        		
 	        		JOptionPane.showMessageDialog(dialog, "Successful checkout for: " + equipmentName);
 	        		dialog.dispose();
 	        		
-	        		// refresh transaction table
+	        		// Refresh transaction table
 	        		FillTable();
 	        		
 	        	}catch (Exception ex) {
@@ -776,7 +790,7 @@ public class MainApp extends JFrame {
 	        	}
 	        }
 	        
-	        // selected attributes are displayed in the MessageDialog
+	        // Selected attributes are displayed in the MessageDialog
 	        JOptionPane.showMessageDialog(dialog,
 	            "Selected Equipment:\nID: " + equipmentID + "\nName: " + equipmentName + "\n" + "Equipment Condition: "
 	            		+ equipmentCondition +"\n" + "Equipment Status: " + equipmentStatus + "\n" + "Required Skill: "
@@ -833,7 +847,7 @@ public class MainApp extends JFrame {
 	            "Transaction Status"
 	        };
 	        
-	        // make a two dimensional data object for JTable from list of transactions
+	        // Make a two dimensional data object for JTable from list of transactions
 	        Object[][] data = new Object[transactions.size()][columnNames.length];
 	        
 	        for (int i = 0; i < transactions.size(); i++) {

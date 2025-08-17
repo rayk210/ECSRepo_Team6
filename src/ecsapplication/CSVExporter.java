@@ -1,3 +1,10 @@
+/**
+ * CSVExporter.java
+ * This is a utility class in the ECS system used to export data from
+ * the JTable component into a .csv file format. This supportive role
+ * it plays enables employees to save data related to transactional records or order history.
+ */
+
 package ecsapplication;
 
 import java.io.FileWriter;

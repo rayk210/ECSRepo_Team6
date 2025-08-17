@@ -1,3 +1,9 @@
+/**
+ * ReminderDAO.java
+ * A class that is responsible for accessing and manipulating reminder data.
+ * Follows a Data Access Object pattern to encapsulate data from the rest of the application.
+ */
+
 package ecsapplication;
 
 import java.sql.Connection;
@@ -8,6 +14,9 @@ import java.sql.SQLException;
 public class ReminderDAO {
 
 	
+	// Updates or saves a reminder record in the reminder table in MySQL
+	// Checks whether a reminder already exists for a certain transaction
+	// If one already exists, that will be updated and if not, the new reminder is inserted into the table
 	public static void saveReminder(Reminder reminder, Connection conn) throws SQLException {
         String checkSql = "SELECT reminderID FROM reminder WHERE transactionID = ?";
         
