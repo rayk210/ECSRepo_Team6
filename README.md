@@ -235,3 +235,55 @@ It supports the following features:
 
      >**Note**: Exporting Employee records using the **Export to CSV** button must be done while on the **View Record** panel as this provides a **personalized transaction history**
      >while the **Export Transactions** and **Export Orders** buttons give a **global view** of all employee transactions and orders
+
+### Using the Order Feature
+
+  1. **Run** the ECS application
+
+  2. Navigate to the **View Record** panel on the UI:
+
+     <img width="450" height="299" alt="image" src="https://github.com/user-attachments/assets/9d55b469-b74f-4d28-8605-5fe01c8959cc" />
+
+  3. Click the **Order** button on the upper part of the UI:
+
+     <img width="975" height="99" alt="image" src="https://github.com/user-attachments/assets/8ea44b8a-d25d-4f7e-ad92-384c48eb1ba0" />
+
+     >**Note**: If the order table is empty after clicking the **Order** button, please **Return** at least one piece of equipment first by clicking the **Return Equipment** button.
+
+     <img width="681" height="455" alt="image" src="https://github.com/user-attachments/assets/8d39fff0-4e56-41fa-b025-2e64ccef3fe4" />
+
+     >**Note**: No equipment available to order
+
+     <img width="577" height="406" alt="image" src="https://github.com/user-attachments/assets/18d36dae-deec-4b9a-9476-27b2b0e4e977" />
+
+     >**Note**: Return a piece of equipment
+
+     <img width="686" height="460" alt="image" src="https://github.com/user-attachments/assets/27464795-57ff-484e-83ee-efbf8132b89e" />
+
+     >**Note**: Click the **Order** button after returning and the equipment will appear as an item that is orderable
+
+  4. Select the equipment to order and press **Confirm Order**:
+
+     <img width="624" height="417" alt="image" src="https://github.com/user-attachments/assets/209c8c6e-80ea-482e-bbe6-705a19bb9198" />
+
+  5. Navigate to the **Orders** panel on the UI
+
+     <img width="534" height="144" alt="image" src="https://github.com/user-attachments/assets/ce94afd5-ebed-497b-be08-68c96c483d83" />
+
+  6. Search for the equipment ordered in **Step 4**:
+
+     <img width="984" height="304" alt="image" src="https://github.com/user-attachments/assets/066ac922-6dfe-48b5-bf32-f20fc8bdb64a" />
+
+  7. Click the **Cancel** button on the top of the UI
+
+     <img width="975" height="51" alt="image" src="https://github.com/user-attachments/assets/c9c95aba-0d69-4314-9d67-7b3622abbffa" />
+
+     >**Note:** To **Cancel** an order for equipment, the **Orders** panel must be active
+     >
+     >Be sure to highlight the equipment that you would like to cancel first, as shown in Step 6
+
+     <img width="925" height="399" alt="image" src="https://github.com/user-attachments/assets/283b6c56-a776-4127-9438-e3b4bf590746" />
+
+  8. **Observer** the change in state from **Confirmed** to **Cancelled**
+
+     <img width="975" height="241" alt="image" src="https://github.com/user-attachments/assets/3fa2c548-78c1-4cb5-95c3-dc22267a00c2" />
