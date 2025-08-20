@@ -228,7 +228,7 @@ public class Employee {
     				TransactionDAO.updateTransactionReturn(DBConnect.getInstance().getConnection(), txn);
     			} catch (SQLException e) {
     				e.printStackTrace();
-    			}
+    			 }
     			System.out.println("Transaction " + txn.getTransactionID() + " was successfully returned by: " + this.getEmpName());
     			return txn;
     		}
