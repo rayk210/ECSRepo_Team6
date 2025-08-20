@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import ecsapplication.enums.EquipmentCondition;
 import ecsapplication.enums.TransactionStatus;
 
 // Subject in Observer design pattern
@@ -35,6 +36,7 @@ public class Transaction implements Subject {
     private LocalDate expectedReturnDate;
     private LocalDate returnDate;
     private TransactionStatus transactionStatus;
+    private EquipmentCondition returnCondition;
     
     // Observer list
     private List<Observer> observers = new ArrayList<>();
@@ -43,7 +45,7 @@ public class Transaction implements Subject {
     public Transaction() {
     	// empty
     }
-	public Transaction(int transactionID, Employee employee, Equipment equipment, Order order, LocalDate orderDate,
+    public Transaction(int transactionID, Employee employee, Equipment equipment, Order order, LocalDate orderDate,
 			LocalDate borrowDate, LocalDate expectedReturnDate, TransactionStatus transactionStatus) {
 		super();
 		this.transactionID = transactionID;
@@ -54,6 +56,20 @@ public class Transaction implements Subject {
 		this.borrowDate = borrowDate;
 		this.expectedReturnDate = expectedReturnDate;
 		this.transactionStatus = transactionStatus;
+	}
+    
+	public Transaction(int transactionID, Employee employee, Equipment equipment, Order order, LocalDate orderDate,
+			LocalDate borrowDate, LocalDate expectedReturnDate, TransactionStatus transactionStatus, EquipmentCondition returnCondition) {
+		super();
+		this.transactionID = transactionID;
+		this.employee = employee;
+		this.equipment = equipment;
+		this.order = order;
+		this.orderDate = orderDate;
+		this.borrowDate = borrowDate;
+		this.expectedReturnDate = expectedReturnDate;
+		this.transactionStatus = transactionStatus;
+		this.returnCondition = returnCondition;
 	}
 
 	// Subject methods
@@ -91,6 +107,14 @@ public class Transaction implements Subject {
 	
 	public void setEmployee(Employee employee) {
 		this.employee = employee;
+	}
+	
+	public EquipmentCondition getReturnCondition() {
+		return returnCondition;
+	}
+	
+	public void setReturnCondition(EquipmentCondition returnCondition) {
+		this.returnCondition = returnCondition;
 	}
 
 	public Equipment getEquipment() {

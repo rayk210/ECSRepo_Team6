@@ -205,21 +205,30 @@ public class Employee {
     public Transaction returnEquipment(int transactionID, EquipmentCondition condition) {
     	
     	for(Transaction txn : empTransaction) {
-    		
+
     		// Ensures that the equipment being returned is indeed borrowed 
     		if (txn.getTransactionID() == transactionID && txn.getTransactionStatus() == TransactionStatus.Borrowed) {
     			LocalDate today = LocalDate.now();
-    			
+
     			// Set return date and change transaction status to returned
     			txn.setReturnDate(today);
     			txn.setTransactionStatus(TransactionStatus.Returned);
-    			
-    			// Change equipment status to available
+
+    			// Set return condition in Transaction
+    			txn.setReturnCondition(condition);
+
     			Equipment eq = txn.getEquipment();
-    			eq.setStatus(EquipmentStatus.Available);
-    			// Change equipments condition
     			eq.setEquipmentCondition(condition);
-    			
+    			// Update equipment status to available
+    			eq.setStatus(EquipmentStatus.Available);
+
+    			// Update to database
+    			try {
+    				EquipmentDAO.updateEquipment(DBConnect.getInstance().getConnection(), eq);
+    				TransactionDAO.updateTransactionReturn(DBConnect.getInstance().getConnection(), txn);
+    			} catch (SQLException e) {
+    				e.printStackTrace();
+    			}
     			System.out.println("Transaction " + txn.getTransactionID() + " was successfully returned by: " + this.getEmpName());
     			return txn;
     		}

@@ -49,36 +49,57 @@ public class EquipmentDAO {
 		// Supports filtering equipment based on employee skills
 		public static List<Equipment> getAvailableEquipmentBySkill(Connection conn, SkillClassification skill) throws SQLException {
 		    List<Equipment> equipmentList = new ArrayList<>();
-		    String strSQL = "SELECT equipmentID, equipmentName, equipmentCondition, equipStatus, requiredSkill " +
-		                 "FROM equipment WHERE equipStatus = 'Available' AND requiredSkill = ?";
-		    
-		    try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
-		    	
-		    	// Debugging
-		    	// Verify skill and if sql query is executed properly through console log
-		    	System.out.println("Debug - Skill: " + skill.toString());
-		    	System.out.println("Debug - Running SQL: " + strSQL);
+		    // Query: join equipment with its last returned transaction (if any)
+		    // A sub-query is used to get the latest returned transaction per equipment
+		    String strSQL = """
+		        SELECT eq.equipmentID, eq.equipmentName, eq.equipStatus, eq.requiredSkill,
+		               t_last.returnCondition
+		        FROM equipment eq
+		        LEFT JOIN (
+		            SELECT t1.equipmentID, t1.returnCondition
+		            FROM transaction t1
+		            WHERE t1.transactionStatus = 'Returned'
+		              AND t1.returnCondition IS NOT NULL
+		              AND t1.transactionID = (
+		                  SELECT MAX(t2.transactionID)
+		                  FROM transaction t2
+		                  WHERE t2.equipmentID = t1.equipmentID
+		                    AND t2.transactionStatus = 'Returned'
+		              )
+		        ) AS t_last
+		          ON eq.equipmentID = t_last.equipmentID
+		        WHERE eq.equipStatus = 'Available'
+		          AND eq.requiredSkill = ?
+		        ORDER BY eq.equipmentID ASC
+		    """;
 
-		        stmt.setString(1, skill.toString());
-		        ResultSet rs = stmt.executeQuery();
-		        
-		        boolean isFound = false;
-		        while (rs.next()) {
-		        	isFound = true;
-		        	System.out.println("Debug - Equipment Found: " + rs.getString("equipmentName"));
-		            Equipment eq = new Equipment(
-		                rs.getInt("equipmentID"),
-		                rs.getString("equipmentName"),
-		                EquipmentCondition.valueOf(rs.getString("equipmentCondition")),
-		                EquipmentStatus.valueOf(rs.getString("equipStatus")),
-		                SkillClassification.valueOf(rs.getString("requiredSkill"))
-		            );
-		            equipmentList.add(eq);
-		        }
-		        if (!isFound) {
-		        	System.out.println("Debug - No equipment found for skill: " + skill.toString());
+		    try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
+		        // Set the skill parameter
+		        stmt.setString(1, skill.name());
+
+		        try (ResultSet rs = stmt.executeQuery()) {
+		            while (rs.next()) {
+		                // Determine the equipment condition:
+		                // Use the last returnCondition if available, otherwise fallback to default (Good)
+		                EquipmentCondition cond = rs.getString("returnCondition") != null
+		                        ? EquipmentCondition.valueOf(rs.getString("returnCondition"))
+		                        : EquipmentCondition.Good; // default fallback
+
+		                // Create Equipment object with the correct condition
+		                Equipment eq = new Equipment(
+		                    rs.getInt("equipmentID"),
+		                    rs.getString("equipmentName"),
+		                    cond,
+		                    EquipmentStatus.valueOf(rs.getString("equipStatus")),
+		                    SkillClassification.valueOf(rs.getString("requiredSkill"))
+		                );
+
+		                // Add to the result list
+		                equipmentList.add(eq);
+		            }
 		        }
 		    }
+
 		    return equipmentList;
 		}
 

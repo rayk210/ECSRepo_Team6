@@ -96,89 +96,88 @@ public class TransactionDAO {
 		List<Transaction> txns = new ArrayList<>();
 
 		String strSQL = "SELECT t.transactionID, t.empID, t.equipmentID, t.orderID, t.returnDate, " +
-				"t.borrowDate, t.expectedReturnDate, t.transactionStatus, " +
-				"e.empName, e.skillClassification, " +
-				"eq.equipmentName, eq.equipmentCondition, eq.equipStatus, eq.requiredSkill, " +
-				"o.orderDate AS OrderDate, o.orderStatus, o.pickUpDate " +
-				"FROM transaction t " +
-				"JOIN employee e ON t.empID = e.empID " +
-				"JOIN equipment eq ON t.equipmentID = eq.equipmentID " +
-				"LEFT JOIN `order` o ON t.orderID = o.orderID ";
+	            "t.borrowDate, t.expectedReturnDate, t.transactionStatus, t.returnCondition, " +
+	            "e.empName, e.skillClassification, " +
+	            "eq.equipmentName, eq.equipmentCondition, eq.equipStatus, eq.requiredSkill, " +
+	            "o.orderDate AS orderDate, o.orderStatus, o.pickUpDate " +
+	            "FROM transaction t " +
+	            "JOIN employee e ON t.empID = e.empID " +
+	            "JOIN equipment eq ON t.equipmentID = eq.equipmentID " +
+	            "LEFT JOIN `order` o ON t.orderID = o.orderID " +
+	            "ORDER BY t.transactionID ASC";
 
-		try (PreparedStatement stmt = conn.prepareStatement(strSQL);
-				ResultSet rs = stmt.executeQuery()) {
+	    try (PreparedStatement stmt = conn.prepareStatement(strSQL);
+	         ResultSet rs = stmt.executeQuery()) {
 
-			while (rs.next()) {
-				// Make Employee object
-				Employee employee = new Employee(
-						rs.getInt("empID"),
-						rs.getString("empName"),
-						SkillClassification.valueOf(rs.getString("skillClassification"))
+	        while (rs.next()) {
+	            // Make Employee object
+	            Employee employee = new Employee(
+	                    rs.getInt("empID"),
+	                    rs.getString("empName"),
+	                    SkillClassification.valueOf(rs.getString("skillClassification"))
+	            );
 
-						);
+	            // Make Equipment object
+	            Equipment eq = new Equipment(
+	                    rs.getInt("equipmentID"),
+	                    rs.getString("equipmentName"),
+	                    EquipmentCondition.valueOf(rs.getString("equipmentCondition")), // current inventory condition
+	                    EquipmentStatus.valueOf(rs.getString("equipStatus")),
+	                    SkillClassification.valueOf(rs.getString("requiredSkill"))
+	            );
 
-				// Make Equipment object
-				Equipment eq = new Equipment(
-						rs.getInt("equipmentID"),
-						rs.getString("equipmentName"),
-						EquipmentCondition.valueOf(rs.getString("equipmentCondition")),
-						EquipmentStatus.valueOf(rs.getString("equipStatus")),
-						SkillClassification.valueOf(rs.getString("requiredSkill"))
+	            // Make Order object, if exists
+	            Order order = null;
+	            int orderID = rs.getInt("orderID");
+	            if (!rs.wasNull()) {
+	                LocalDate orderDate = rs.getDate("orderDate") != null
+	                        ? rs.getDate("orderDate").toLocalDate() : null;
+	                OrderStatus orderStatus = rs.getString("orderStatus") != null
+	                        ? OrderStatus.valueOf(rs.getString("orderStatus")) : null;
+	                LocalDate pickUpDate = rs.getDate("pickUpDate") != null
+	                        ? rs.getDate("pickUpDate").toLocalDate() : null;
 
-						);
+	                order = new Order(orderID, eq, null, orderDate, orderStatus, pickUpDate, null);
+	            }
 
-				// Make Order object, if exists
-				Order order = null;
-				int orderID = rs.getInt("orderID");
-				if (!rs.wasNull()) {
-					Equipment eqForOrder = eq;  
-					Employee empForOrder = null; 
+	            // Transaction object
+	            Transaction txn = new Transaction(
+	                    rs.getInt("transactionID"),
+	                    employee,
+	                    eq,
+	                    order,
+	                    rs.getDate("orderDate") != null ? rs.getDate("orderDate").toLocalDate() : null,
+	                    rs.getDate("borrowDate") != null ? rs.getDate("borrowDate").toLocalDate() : null,
+	                    rs.getDate("expectedReturnDate") != null ? rs.getDate("expectedReturnDate").toLocalDate() : null,
+	                    TransactionStatus.valueOf(rs.getString("transactionStatus")),
+	                    rs.getString("returnCondition") != null ? EquipmentCondition.valueOf(rs.getString("returnCondition")) : null
+	            );
 
-					LocalDate orderDate = rs.getDate("OrderDate") != null
-							? rs.getDate("OrderDate").toLocalDate() : null;
+	            // Set returnDate if exists
+	            if (rs.getDate("returnDate") != null) {
+	                txn.setReturnDate(rs.getDate("returnDate").toLocalDate());
+	            }
 
-					OrderStatus orderStatus = rs.getString("orderStatus") != null
-							? OrderStatus.valueOf(rs.getString("orderStatus")) : null;
+	            txns.add(txn);
+	        }
+	    }
 
-					LocalDate pickUpDate = rs.getDate("pickUpDate") != null
-							? rs.getDate("pickUpDate").toLocalDate() : null;
+	    return txns;
 
-					order = new Order(orderID, eqForOrder, empForOrder, orderDate, orderStatus, pickUpDate, null);
-				}
-
-				// Transaction object
-				Transaction txn = new Transaction(
-						rs.getInt("transactionID"),
-						employee,
-						eq,
-						order,
-						rs.getDate("orderDate") != null ? rs.getDate("orderDate").toLocalDate() : null,
-								rs.getDate("borrowDate") != null ? rs.getDate("borrowDate").toLocalDate() : null,
-										rs.getDate("expectedReturnDate") != null ? rs.getDate("expectedReturnDate").toLocalDate() : null,
-												TransactionStatus.valueOf(rs.getString("transactionStatus"))
-						);
-
-				// Set returnDate if exists
-				if (rs.getDate("returnDate") != null) {
-					txn.setReturnDate(rs.getDate("returnDate").toLocalDate());
-				}
-
-				txns.add(txn);
-			}
-		}
-
-		return txns;
 	}
 
 	// Is used to update transaction status to ‘Returned’ and record the return date in the database
 	// This method is invoked when employees return equipment
 	public static void updateTransactionReturn(Connection conn, Transaction txn) throws SQLException {
-		String strSQL = "UPDATE transaction SET transactionStatus = ?, returnDate = ? WHERE transactionID = ?";
+		String strSQL = "UPDATE transaction SET transactionStatus = ?, returnDate = ?, returnCondition = ? WHERE transactionID = ?";
 
 		try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
 			stmt.setString(1, txn.getTransactionStatus().name());
 			stmt.setDate(2, Date.valueOf(txn.getReturnDate()));
-			stmt.setInt(3, txn.getTransactionID());
+			System.out.println("Updating transaction ID: " + txn.getTransactionID());
+			System.out.println("Return condition: " + txn.getReturnCondition());
+			stmt.setString(3, txn.getReturnCondition() != null ? txn.getReturnCondition().name() : null);
+			stmt.setInt(4, txn.getTransactionID());
 			stmt.executeUpdate();
 		}
 	}

@@ -857,7 +857,9 @@ public class MainApp extends JFrame {
 	            data[i][2] = t.getEmployee().getSkillClassification().name();
 	            data[i][3] = t.getEquipment().getEquipmentName();
 	            data[i][4] = t.getEquipment().getRequiredSkill().name();
-	            data[i][5] = t.getEquipment().getEquipmentCondition().name();
+	            data[i][5] = t.getReturnCondition() != null
+	            				? t.getReturnCondition().name()
+	            				: t.getEquipment().getEquipmentCondition().name();
 	            data[i][6] = t.getBorrowDate();
 	            data[i][7] = t.getExpectedReturnDate();
 	            data[i][8] = t.getTransactionStatus().name();
