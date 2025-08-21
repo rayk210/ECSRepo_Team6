@@ -34,6 +34,12 @@ public class Reminder implements Observer{
 		// Blank constructor overload
 	}
 	
+	public Reminder(Employee employee, Transaction transaction) {
+		super();
+		this.employee = employee;
+		this.transaction = transaction;
+	}
+	
 	public Reminder(Employee employee, Transaction transaction, LocalDate reminderDate) {
 		super();
 		this.employee = employee;
