@@ -45,6 +45,14 @@ public class Transaction implements Subject {
     public Transaction() {
     	// empty
     }
+    
+    public Transaction(int transactionID, Employee employee, Equipment equipment, TransactionStatus transactionStatus) {
+    	this.transactionID = transactionID;
+    	this.employee = employee;
+    	this.equipment = equipment;
+    	this.transactionStatus = transactionStatus;
+    }
+    
     public Transaction(int transactionID, Employee employee, Equipment equipment, Order order, LocalDate orderDate,
 			LocalDate borrowDate, LocalDate expectedReturnDate, TransactionStatus transactionStatus) {
 		super();
@@ -135,6 +143,10 @@ public class Transaction implements Subject {
 
 	public LocalDate getBorrowDate() {
 		return borrowDate;
+	}
+	
+	public void setBorrowDate(LocalDate borrowDate) {
+		this.borrowDate = borrowDate;
 	}
 
 	public LocalDate getExpectedReturnDate() {

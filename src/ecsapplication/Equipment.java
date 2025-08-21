@@ -31,6 +31,13 @@ public class Equipment {
 	    this.equipmentName = equipmentName;
 	}
 	
+	public Equipment(int equipmentID, String equipmentName, SkillClassification requiredSkill,EquipmentCondition equipmentCondition) {
+		this.equipmentID = equipmentID;
+		this.equipmentName = equipmentName;
+		this.requiredSkill = requiredSkill;
+		this.equipmentCondition = equipmentCondition;
+	}
+	
 	public Equipment(int equipmentID, String equipmentName, EquipmentStatus status, SkillClassification requiredSkill) {
 	    this.equipmentID = equipmentID;
 	    this.equipmentName = equipmentName;
