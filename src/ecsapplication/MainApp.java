@@ -535,6 +535,10 @@ public class MainApp extends JFrame {
 	                Equipment equipment = EquipmentDAO.getEquipmentByID(conn, equipmentId);
 	                String result = employee.orderEquipment(equipment);
 	                JOptionPane.showMessageDialog(dialog, result);
+	                
+	                // Refresh Order panel for real-time changes
+	                refreshOrdersTable();
+	                
 	                dialog.dispose();
 	            } catch (SQLException ex) {
 	                ex.printStackTrace();
@@ -782,6 +786,9 @@ public class MainApp extends JFrame {
 	        		
 	        		// Refresh transaction table
 	        		FillTable();
+	        		
+	        		// Refresh View Record table
+		            refreshViewRecordTable(employee);
 	        		
 	        	}catch (Exception ex) {
 	        		ex.printStackTrace();

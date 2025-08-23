@@ -33,17 +33,18 @@ public class Employee {
     private Order order;
     
     // Constructors
-    
     public Employee() {
     	this.empTransaction = new ArrayList<>();
     }
     
+    // Overloaded constructor
     public Employee(int empID, String empName) {
         this.empID = empID;
         this.empName = empName;
         this.empTransaction = new ArrayList<>();
     }
     
+    // Overloaded constructor
     public Employee(int empID, String empName, SkillClassification skillClassification) {
         this.empID = empID;
         this.empName = empName;
@@ -51,104 +52,123 @@ public class Employee {
         this.empTransaction = new ArrayList<>();
     }
     
+    // Overloaded constructor
 	public Employee(int empID, String empName, SkillClassification skillClassification,
 			List<Transaction> empTransaction, Order order) {
 		
 		this.empID = empID;
 		this.empName = empName;
 		this.skillClassification = skillClassification;
+		
+		// Initialize empTransaction: use provided list if not null, otherwise create a new list
 		this.empTransaction = empTransaction != null ? empTransaction : new ArrayList<>();
 		this.order = order;
 	}
 	
 	// Getters and Setters
-
+	// Returns the employee ID
 	public int getEmpID() {
 		return empID;
 	}
 	
+	// Sets the employee ID
 	public void setEmpID(int empID) {
 		this.empID = empID;
 	}
-
+	
+	// Returns the employee name
 	public String getEmpName() {
 		return empName;
 	}
 
+	// Sets the employee name
 	public void setEmpName(String empName) {
 		this.empName = empName;
 	}
 
+	// Returns the skill classification of the employee
 	public SkillClassification getSkillClassification() {
 		return skillClassification;
 	}
 
+	// Sets the skill classification of the employee
 	public void setSkillClassification(SkillClassification skillClassification) {
 		this.skillClassification = skillClassification;
 	}
 
+	// Returns a list of transactions associated with the employee
 	public List<Transaction> getEmpTransaction() {
 		return empTransaction;
 	}
 	
+	// Sets a list of transactions associated with the employee
 	public void setEmpTransaction(List<Transaction> transactions) {
 	    this.empTransaction = transactions;
 	}
 
+	// Returns the current order associated with the employee
 	public Order getOrder() {
 		return order;
 	}
 	
 	// Enables an employee to check out equipment
-	// Sets the transaction status to ‘Borrowed’
 	public Transaction checkOut(Equipment equipment) {
+		
+		// Step 1: Get current date for borrow date
 	    LocalDate today = LocalDate.now();
+	    
+	    // Step 2: Set expected return date as 7 weeks from today
 	    LocalDate expectedReturn = today.plusWeeks(7);
 	    
+	    // Step 3: Clone the equipment to ensure this transaction has it own copy
 	    Equipment equipmentCopy = equipment.clone();
 
+	    // Step 4: Create Transaction object 
 	    Transaction transaction = new Transaction(
-	        0,
-	        this,        // this employee
-	        equipmentCopy,
-	        null,
-	        null,      // orderDate
-	        today,      // borrowDate
-	        expectedReturn,
-	        TransactionStatus.Borrowed
+	        0,               // Transaction ID will be set by the DB
+	        this,            // Reference to the employee performing the checkout
+	        equipmentCopy,   // Equipment being borrowed
+	        null,            // Order reference not used here
+	        null,            // Order date not used here
+	        today,           // Borrow date
+	        expectedReturn,  // Expected return date
+	        TransactionStatus.Borrowed  // Transaction status
 	    );
 
+	    // Step 5: Add transaction to employees local list for tracking
 	    this.empTransaction.add(transaction);
+	    
+	    // Step 6: Return to newly created transaction object
 	    return transaction;
     }
 
 	// Enables an employee to order equipment
-	// Sets the order status to ‘Confirmed’ and equipment status to ‘Ordered’
     public String orderEquipment(Equipment equipment) {
-    	// Validate status
+    	
+    	// Step 1: Equipment must be available
         if (equipment.getStatus() != EquipmentStatus.Available) {
             return "Equipment is not available.";
         }
 
-        // Validate skill
+        // Step 2: Employee must have the required skill classification
         if (!this.getSkillClassification().equals(equipment.getRequiredSkill())) {
             return "You are not qualified to order this equipment.";
         }
 
-        // Make a new order
+        // Step 3: Create a new Order object
         Order order = new Order(
-            0,                 
-            this,               
-            equipment,
-            LocalDate.now(),   
-            OrderStatus.Confirmed
+            0,                      // Auto-generated ID
+            this,                   // Employee placing the order
+            equipment,              // Equipment to order
+            LocalDate.now(),        // Order date = today
+            OrderStatus.Confirmed   
         );
         
-        // Save to the database
+        // Step 4: Save order to the database
         boolean success = OrderDAO.insertOrder(order);
 
+        // Step 5: Update equipment status if order is successful
         if (success) {
-            // Update equipment status in database
             EquipmentDAO.updateEquipmentStatus(equipment.getEquipmentID(), EquipmentStatus.Ordered);
             return "Order confirmed.";
         } else {
@@ -158,100 +178,105 @@ public class Employee {
     }
     
     // Enables an employee to cancel an order made
-    // Sets the order status to ‘Cancelled’ and equipment status to ‘Available’ so that it can be ordered or checked out again
+    // Updates the order status to ‘Cancelled’ and set the associated equipment status to ‘Available’ so that it can be ordered or checked out again
     public String cancelOrder(int orderID) {
         try (Connection conn = DBConnect.getInstance().getConnection()) {
-            // Retrieve order 
+        	
+            // Retrieve order from the database using the given orderID
             Order order = OrderDAO.getOrderByID(conn, orderID);
             if (order == null) {
-            	return "Order not found";
+            	return "Order not found";  // Return if order does not exist
             }
             if (order.getOrderStatus() == OrderStatus.Cancelled) {
-            	return "Order is already cancelled";
+            	return "Order is already cancelled";  // Return if the order is already cancelled
             }
             
-
-            // Update order status to Cancelled
+            // SQL statement to update the order status to "Cancelled"
             String sqlUpdateOrder = "UPDATE `order` SET orderStatus = 'Cancelled' WHERE orderID = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sqlUpdateOrder)) {
                 stmt.setInt(1, orderID);
-                stmt.executeUpdate();
+                stmt.executeUpdate();  // Execute the update
             }
 
-            // Update equipment status to Available
+            // SQL statement to update the equipment status to "Available"
             String sqlUpdateEquip = "UPDATE equipment SET equipStatus = 'Available' WHERE equipmentID = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sqlUpdateEquip)) {
                 stmt.setInt(1, order.getEquipment().getEquipmentID());
                 
-                int affected = stmt.executeUpdate();
+                int affected = stmt.executeUpdate();  // Apply the update
                 
                 if (affected > 0) {
-                	return "Order successfully cancelled";
+                	return "Order successfully cancelled";  // Success message
                 }
                 else {
-                	return "Failed to cancel order";
+                	return "Failed to cancel order";  // Failure message if equipment update fails
                 }
             }
             
         } catch (SQLException e) {
-            e.printStackTrace();
+            e.printStackTrace();  // Print exception if database operation fails
             return "An error occured while cancelling the order.";
         }
     }
 
 
-    // Enables an employee to return equipment that they have previously checked out
-    // Sets the transaction status to ‘Returned’, equipment status to ‘Available’, and equipment condition to the one chosen by the employee
+    // Allows an employee to return equipment previously borrowed equipment
+    // Updates the transaction status to ‘Returned’, equipment status to ‘Available’, and equipment condition to the one chosen by the employee
     public Transaction returnEquipment(int transactionID, EquipmentCondition condition) {
     	
+    	// Iterates over the employee's list of transactions
     	for(Transaction txn : empTransaction) {
 
-    		// Ensures that the equipment being returned is indeed borrowed 
+    		// Check that the transaction matches the given ID and is currently borrowed 
     		if (txn.getTransactionID() == transactionID && txn.getTransactionStatus() == TransactionStatus.Borrowed) {
     			LocalDate today = LocalDate.now();
 
-    			// Set return date and change transaction status to returned
+    			// Set return date to today and update the transaction status
     			txn.setReturnDate(today);
     			txn.setTransactionStatus(TransactionStatus.Returned);
 
-    			// Set return condition in Transaction
+    			// Record the condition of the equipment in the transaction
     			txn.setReturnCondition(condition);
 
     			Equipment eq = txn.getEquipment();
-    			eq.setEquipmentCondition(condition);
+    			
     			// Update equipment status to available
     			eq.setStatus(EquipmentStatus.Available);
 
-    			// Update to database
+    			// Persist the changes to the database
     			try {
     				EquipmentDAO.updateEquipment(DBConnect.getInstance().getConnection(), eq);
     				TransactionDAO.updateTransactionReturn(DBConnect.getInstance().getConnection(), txn);
     			} catch (SQLException e) {
-    				e.printStackTrace();
+    				e.printStackTrace();  // Print any database errors
     			 }
     			System.out.println("Transaction " + txn.getTransactionID() + " was successfully returned by: " + this.getEmpName());
-    			return txn;
+    			return txn;  // Return the transaction
     		}
     	}
+    	// If no matching borrowed transaction is found
     	System.out.println("No active transactions found for this equipment.");
         return null;
     }
 
-    // Retrieves a list of transactions based on employeeID
-    // Used to display individual employee records for the View Record use case
+    // Retrieves a list of transactions associated with this employeeID from the database
+    // Used for displaying individual employee's records in the "View Record" panel
     public List<Transaction> viewRecord() {
         
     	List<Transaction> transactions = new ArrayList<>();
     	
     	try(Connection conn = DBConnect.getInstance().getConnection()){
+    		
+    		// Query database for transactions by employee ID
     		transactions = TransactionDAO.getTransactionsByEmployeeID(conn, this.empID);
     		
     	}catch (SQLException e){
-    		e.printStackTrace();
+    		e.printStackTrace();  // Print error if database access fails
     	}
     	return transactions;
     }
     
+    // Returns a string representation of the employee (ID - Name)
     @Override
     public String toString() {
 		return empID + " - " + empName;
