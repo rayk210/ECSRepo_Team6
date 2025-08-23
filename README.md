@@ -49,6 +49,8 @@ It supports the following features:
 
     -JAR file in **lib/mysql-connector-j-9.4.0.jar**
 
+    -JUnit test cases in **test/ecsapplication/test** folder
+
     -.settings folder
     
 ## Setup Database
