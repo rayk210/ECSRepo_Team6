@@ -37,6 +37,7 @@ public class Transaction implements Subject {
     private LocalDate returnDate;
     private TransactionStatus transactionStatus;
     private EquipmentCondition returnCondition;
+    private EquipmentCondition checkoutCondition;
     
     // Observer list
     private List<Observer> observers = new ArrayList<>();
@@ -66,7 +67,7 @@ public class Transaction implements Subject {
 		this.transactionStatus = transactionStatus;
 	}
     
-	public Transaction(int transactionID, Employee employee, Equipment equipment, Order order, LocalDate orderDate,
+    public Transaction(int transactionID, Employee employee, Equipment equipment, Order order, LocalDate orderDate,
 			LocalDate borrowDate, LocalDate expectedReturnDate, TransactionStatus transactionStatus, EquipmentCondition returnCondition) {
 		super();
 		this.transactionID = transactionID;
@@ -78,8 +79,25 @@ public class Transaction implements Subject {
 		this.expectedReturnDate = expectedReturnDate;
 		this.transactionStatus = transactionStatus;
 		this.returnCondition = returnCondition;
+		this.checkoutCondition = null;
 	}
-
+    
+	public Transaction(int transactionID, Employee employee, Equipment equipment, Order order, LocalDate orderDate,
+			LocalDate borrowDate, LocalDate expectedReturnDate, TransactionStatus transactionStatus, EquipmentCondition returnCondition,
+			 EquipmentCondition checkoutCondition) {
+		super();
+		this.transactionID = transactionID;
+		this.employee = employee;
+		this.equipment = equipment;
+		this.order = order;
+		this.orderDate = orderDate;
+		this.borrowDate = borrowDate;
+		this.expectedReturnDate = expectedReturnDate;
+		this.transactionStatus = transactionStatus;
+		this.returnCondition = returnCondition;
+		this.checkoutCondition = checkoutCondition;
+	}
+	
 	// Subject methods
 	@Override
 	public void registerObserver(Observer observer) {
@@ -123,6 +141,14 @@ public class Transaction implements Subject {
 	
 	public void setReturnCondition(EquipmentCondition returnCondition) {
 		this.returnCondition = returnCondition;
+	}
+	
+	public EquipmentCondition getCheckoutCondition() {
+		return checkoutCondition;
+	}
+	
+	public void setCheckoutCondition(EquipmentCondition checkoutCondition) {
+		this.checkoutCondition = checkoutCondition;
 	}
 
 	public Equipment getEquipment() {

@@ -2,7 +2,7 @@
  * CSVExporter.java
  * This is a utility class in the ECS system used to export data from
  * the JTable component into a .csv file format. This supportive role
- * it plays enables employees to save data related to transactional records or order history.
+ * it plays enables employees to save data related to transaction records or order history.
  */
 
 package ecsapplication;
@@ -16,44 +16,46 @@ public class CSVExporter {
 
 	public static void exportToCSV(JTable table, String filePath) throws IOException {
 		
-		// Creates table model containing data and column names
+		// Retrieves the table model containing data and column names
         TableModel model = table.getModel();
         
-        // Open a file output stream wrapped in a try block
+        // Open a FileWriter in try-with-resources to automatically close the stream
         try (FileWriter csv = new FileWriter(filePath)) {
 
-        	// Writes the column name to CSV and separates values with a comma
+        	// Writes the column headers to CSV and separates them with commas
             for (int i = 0; i < model.getColumnCount(); i++) {
-                csv.write(model.getColumnName(i));
+                csv.write(model.getColumnName(i));    // Write column name
                 if (i < model.getColumnCount() - 1) {
-                    csv.write(",");
+                    csv.write(",");  // Add comma expect for the last column
                 }
             }
-            csv.write("\n");
+            csv.write("\n");  // Move to the next line after column headers
 
-            // Iterates through every row the JTable model
+            // Iterate over each row in the table model
             for (int row = 0; row < model.getRowCount(); row++) {
             	
-            	// Iterates though every column 
+            	// Iterate over each column in the current row
                 for (int col = 0; col < model.getColumnCount(); col++) {
                 	
-                	// Takes the value at each row and column
+                	// Retrieve the cell value at the current row and column
                     Object value = model.getValueAt(row, col);
               
-                    // Change values to a string
+                    // Convert the value to a string; empty if null
                     String cell = value != null ? value.toString() : "";
                     
-                    // Checks if cells contain a quote and doubles them
+                    // Handle special characters (commas or quotes) in CSV
                     if (cell.contains(",") || cell.contains("\"")) {
                         cell = cell.replace("\"", "\"\"");
                         cell = "\"" + cell + "\"";
                     }
-                    csv.write(cell);
+                    csv.write(cell);  // Write the cell value
+                    
+                    // Add a comma if not the last column in the row
                     if (col < model.getColumnCount() - 1) {
                         csv.write(",");
                     }
                 }
-                csv.write("\n");
+                csv.write("\n");  // Move to the next line after finishing the row
             }
         }
     }

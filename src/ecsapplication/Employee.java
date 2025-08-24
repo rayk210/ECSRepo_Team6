@@ -119,26 +119,25 @@ public class Employee {
 	    
 	    // Step 2: Set expected return date as 7 weeks from today
 	    LocalDate expectedReturn = today.plusWeeks(7);
-	    
-	    // Step 3: Clone the equipment to ensure this transaction has it own copy
-	    Equipment equipmentCopy = equipment.clone();
 
-	    // Step 4: Create Transaction object 
+	    // Step 3: Create Transaction object 
 	    Transaction transaction = new Transaction(
 	        0,               // Transaction ID will be set by the DB
 	        this,            // Reference to the employee performing the checkout
-	        equipmentCopy,   // Equipment being borrowed
+	        equipment,       // Equipment being borrowed
 	        null,            // Order reference not used here
 	        null,            // Order date not used here
 	        today,           // Borrow date
 	        expectedReturn,  // Expected return date
-	        TransactionStatus.Borrowed  // Transaction status
+	        TransactionStatus.Borrowed,  // Transaction status
+	        null,            // returnCondition
+	        equipment.getEquipmentCondition()   // Filled with checkoutCondition
 	    );
 
-	    // Step 5: Add transaction to employees local list for tracking
+	    // Step 4: Add transaction to employees local list for tracking
 	    this.empTransaction.add(transaction);
 	    
-	    // Step 6: Return to newly created transaction object
+	    // Step 5: Return to newly created transaction object
 	    return transaction;
     }
 
@@ -242,14 +241,28 @@ public class Employee {
     			
     			// Update equipment status to available
     			eq.setStatus(EquipmentStatus.Available);
+    			eq.setEquipmentCondition(condition);
 
     			// Persist the changes to the database
+    			Connection conn = null;
     			try {
-    				EquipmentDAO.updateEquipment(DBConnect.getInstance().getConnection(), eq);
-    				TransactionDAO.updateTransactionReturn(DBConnect.getInstance().getConnection(), txn);
+    			    conn = DBConnect.getInstance().getConnection();
+    			    conn.setAutoCommit(false);  // start transaction
+
+    			    TransactionDAO.updateTransactionReturn(conn, txn);
+    			    EquipmentDAO.updateEquipment(conn, eq);
+
+    			    conn.commit();  // save changes
     			} catch (SQLException e) {
-    				e.printStackTrace();  // Print any database errors
-    			 }
+    			    e.printStackTrace();
+    			    if (conn != null) {
+    			        try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+    			    }
+    			} finally {
+    			    if (conn != null) {
+    			        try { conn.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+    			    }
+    			}
     			System.out.println("Transaction " + txn.getTransactionID() + " was successfully returned by: " + this.getEmpName());
     			return txn;  // Return the transaction
     		}
@@ -263,6 +276,7 @@ public class Employee {
     // Used for displaying individual employee's records in the "View Record" panel
     public List<Transaction> viewRecord() {
         
+    	// Declare a dynamic list to hold employee transactions
     	List<Transaction> transactions = new ArrayList<>();
     	
     	try(Connection conn = DBConnect.getInstance().getConnection()){

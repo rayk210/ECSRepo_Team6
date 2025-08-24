@@ -1,18 +1,26 @@
 /**
  * MainApp.java
  * Entry point for the ECS system.
- * The ECS system is a Java-based desktop application that's designed to manage the life-cycle of equipment in GB manufacturing.
+ * The ECS system is a Java-based desktop application that's designed to manage the life-cycle
+ * of equipment in GB manufacturing.
  * It supports the following features:
- *   Checkout Equipment
- *   Return Equipment
- *   Order Equipment
- *   Receive Reminders
- *   View Records
+ *   -Checkout Equipment
+ *   -Return Equipment
+ *   -Order Equipment
+ *   -Receive Reminders
+ *   -View Records
  *   
  * The program adheres to the following design patterns:
- *   Singleton: DBConnect class
- *   Observer: Reminder class (Observer) and Transaction class (Subject)
+ * 1. Singleton: DBConnect class
+ *   -Ensures only one instance of DBConnect exist throughout the application.
+ *   -Provides a global access point to the database connection.
+ *   -Helps manage resources efficiently and prevents multiple connection.
  *   
+ * 2. Observer: Reminder class (Observer) and Transaction class (Subject)
+ *   -Reminder objects observe changes in Transaction objects.
+ *   -When a Transaction is updated (e.g., Borrowed or Returned), all registered
+ *    Reminders are notified.
+ *  
  * This class launches the GUI that's built using the Java Swing toolkit.
  * The Swing components include:
  *   JFrame: main application window
@@ -23,6 +31,11 @@
  *   JScrollPane: gives the ability to scroll with tables
  */
 
+// ===============================================
+// Import statements for Java core libraries,
+// Swing components, database connectivity,
+// and custom enumerations used in ECS application
+// ===============================================
 package ecsapplication;
 
 import java.awt.EventQueue;
@@ -69,13 +82,19 @@ import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
 
+// MainApp is the main application window
+// It extends JFrame, meaning this class inherits
+// all behaviors of a standard Swing window frame
 public class MainApp extends JFrame {
 
+	// ==============================
+	// UI Swing Components and Fields
+	// ==============================
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
 	private JButton btnExportTransaction;
 	private JPanel panel;
-	private JComboBox comboEmployees;
+	private JComboBox<Employee> comboEmployees;
 	private JButton btnCheckReminder;
 	private JButton btnCheckoutEquipment;
 	private JButton btnReturnEquipment;
@@ -93,12 +112,20 @@ public class MainApp extends JFrame {
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
+		
+		// Schedule this application to run on the Event Dispatch Thread (EDT)
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
+					
+					// Create an instance of the MainApp window
 					MainApp frame = new MainApp();
+					
+					// Set the application window as visible
 					frame.setVisible(true);
 				} catch (Exception e) {
+					
+					// Print any errors that occur during startup
 					e.printStackTrace();
 				}
 			}
@@ -109,102 +136,166 @@ public class MainApp extends JFrame {
 	 * Create the frame.
 	 */
 	public MainApp() {
+		
+		// Set title of the main application window
 		setTitle("Equipment Checkout System");
+		
+		// Ensure application closes completely when window is closed
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		// Set window position (x=100, y=100) and size (width=900, height=400)
 		setBounds(100, 100, 900, 400);
+		
+		// Create main panel to hold all components
 		contentPane = new JPanel();
+		
+		// Add padding of 5 pixels on all sides inside the content pane
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		
-		// Change background color
+		// Change background color of main panel
 		contentPane.setBackground(new Color(0, 153, 153));
 		
+		// Set this content pane as the main container for the frame
 		setContentPane(contentPane);
+		
+		// Use Borderlayout as layout manager (allows North, South, East, West, and Center positioning)
 		contentPane.setLayout(new BorderLayout(0, 0));
 		
-		
+		// Create panel to be placed at the bottom
 		JPanel bottomPanel = new JPanel();
+		
+		// Use FlowLayout for bottomPanel with center alignment and 10 pixel gaps
 		bottomPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
 
-		// Export Transaction button
+		// Create a button for exporting transactions
 		btnExportTransaction = new JButton("Export Transactions");
-		// Action listener for export transaction button
+		
+		// Add action listener to handle export transaction button click events
 		btnExportTransaction.addActionListener(new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
 		    	
-		    	// Open JFileChooser to save file
+		    	// Open JFileChooser dialog to select save location
 		        JFileChooser fileChooser = new JFileChooser();
+		        
+		        // Set title of the file chooser dialog
 		        fileChooser.setDialogTitle("Save Transactions CSV");
+		        
+		        // Restrict file type to CSV only
 		        FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files", "csv");
 		        fileChooser.setFileFilter(filter);
 
+		        // Show save dialog and capture user selection
 		        int userSelection = fileChooser.showSaveDialog(null);
+		        
+		        // If user clicked 'Save'
 		        if (userSelection == JFileChooser.APPROVE_OPTION) {
+		        	
+		        	// Get file selected by user
 		            File fileToSave = fileChooser.getSelectedFile();
+		            
+		            // Extract file path
 		            String filePath = fileToSave.getAbsolutePath();
+		            
+		            // Append ".csv" if user did not include extension
 		            if (!filePath.toLowerCase().endsWith(".csv")) {
 		                filePath += ".csv";
 		            }
 		            try {
+		            	
+		            	// Export JTable data to CSV file
 		                CSVExporter.exportToCSV(tblEmployee, filePath);
-		                System.out.println("Transactions exported to: " + filePath);
+		                
+		                // Show success message dialog to user
 		                JOptionPane.showMessageDialog(null, "Successfully exported Transactions to:\n" + filePath);
 		            } catch (IOException ex) {
+		            	
+		            	// Print error stack trace for debugging
 		                ex.printStackTrace();
+		                
+		                // Print failure message to console
 		                System.out.println("Failed to export Transactions.");
+		                
+		                // Show failure dialog to user
 		                JOptionPane.showMessageDialog(null, "Failed to export Transactions.\nPlease try again.");
 		            }
 		        }
 		    }
 		});
+		
+		// Add export button to the bottom panel
 		bottomPanel.add(btnExportTransaction);
-
-		// Export Orders button
+		
+		// ============================
+		// EXPORT ORDERS BUTTON SECTION
+		// ============================
+		
+		// Create a new button to export orders
 		JButton btnExportOrders = new JButton("Export Orders");
+		
+		// Add action listener to handle button click
 		btnExportOrders.addActionListener(new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
 		    	
-		    	// Open JFileChooser to save file
+		    	// Open a JFileChooser dialog to select save location
 		        JFileChooser fileChooser = new JFileChooser();
-		        fileChooser.setDialogTitle("Save Orders CSV");
+		        fileChooser.setDialogTitle("Save Orders CSV");  // Set title of CSV dialog
+		        
+		        // Set filter to allow only CSV files
 		        FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files", "csv");
 		        fileChooser.setFileFilter(filter);
 
+		        // Check if user approved the file selection
 		        int userSelection = fileChooser.showSaveDialog(null);
 		        if (userSelection == JFileChooser.APPROVE_OPTION) {
 		            File fileToSave = fileChooser.getSelectedFile();
-		            String filePath = fileToSave.getAbsolutePath();
+		            String filePath = fileToSave.getAbsolutePath();  // Retrieve absolute path
+		            
+		            // Ensure the file name ends with ".csv"
 		            if (!filePath.toLowerCase().endsWith(".csv")) {
 		                filePath += ".csv";
 		            }
 		            try {
+		            	// Export the orders table to the selected CSV file
 		                CSVExporter.exportToCSV(tblOrders, filePath);
-		                System.out.println("Orders exported to: " + filePath);
+		                
+		                // Notify the user of a successful export
 		                JOptionPane.showMessageDialog(null, "Successfully exported Orders to:\n" + filePath);
 		            } catch (IOException ex) {
 		                ex.printStackTrace();
 		                System.out.println("Failed to export Orders.");
+		                
+		                // Notify the user if export fails
 		                JOptionPane.showMessageDialog(null, "Failed to export Orders.\nPlease try again.");
 		            }
 		        }
 		    }
 		});
+		
+		// Add the export orders button  to the bottom panel
 		bottomPanel.add(btnExportOrders);
 
-
+		// Add the bottom panel (with export buttons) to the SOUTH region of the content pane
 		contentPane.add(bottomPanel, BorderLayout.SOUTH);
 		
+		// Create a new panel for the top section (e.g., Check Reminder, Check Out Equipment)
 		panel = new JPanel();
 		contentPane.add(panel, BorderLayout.NORTH);
 		
+		// =============================
+		// CHECK REMINDER BUTTON SECTION
+		// =============================
 		
+		// Create the "Check Reminder" button
 		btnCheckReminder = new JButton("Check Reminder");
 		
-		// Action listener for Check Reminder button
+		// Add action listener to handle clicks on "Check Reminder"
 		btnCheckReminder.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
+				// Get employee selected in the combo box
 				Employee selectedEmployee = (Employee) comboEmployees.getSelectedItem();
 				
+				// Validation selection
 				if(selectedEmployee == null) {
 					JOptionPane.showMessageDialog(MainApp.this, "Please select an Employee from the drop menu");
 					return;
@@ -212,31 +303,33 @@ public class MainApp extends JFrame {
 				
 				try(Connection conn = DBConnect.getInstance().getConnection()){
 					
-					// 1. Retrieve all BORROWED transactions for employees
+					// 1. Retrieve all BORROWED transactions for the selected employee
 					List<Transaction> borrowedTransaction = TransactionDAO.getBorrowedTransactionsByEmployee(selectedEmployee.getEmpID(), conn);
 					
+					// 2. If no borrowed transaction exists, show message
 					if(borrowedTransaction.isEmpty()) {
 						txtReminder.setText("No borrowed equipment for " + selectedEmployee.getEmpName());
 						return;
 					}
 					
+					// StringBuilder to hold all reminder messages generated before being displayed them in the text area
 					StringBuilder remindersText = new StringBuilder();
 					
-					// 2. Iterate through all borrowed transactions
+					// 3. Iterate through all borrowed transactions
 					for(Transaction t : borrowedTransaction) {
 						
-						// 3. Make a reminder object and register it to Transaction
+						// 3a. Create a reminder object and register it as observer
 						Reminder reminder = new Reminder();
 						t.registerObserver(reminder);
 						
-						// 4. Notify Observer -> generateReminder automatically + save to DB
+						// 3b. Notify Observer to generate reminder
 						t.notifyObservers();
 						
-						// 5. Retrieve reminder msg from object and add it to the display
+						// 3c. Append the reminder message to the string builder
 						remindersText.append(reminder.getReminderMSG()).append("\n");
 					}
 					
-					// 6. Display all reminder in the txtReminder text area
+					// 4. Display all reminder in the txtReminder text area
 					txtReminder.setText(remindersText.toString());
 					
 				}catch (SQLException ex) {
@@ -245,199 +338,307 @@ public class MainApp extends JFrame {
 				}
 			}
 		});
+		
+		// Set layout for the top panel
 		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+		
+		// Add the "Check Reminder" button to the top panel
 		panel.add(btnCheckReminder);
 		
-		comboEmployees = new JComboBox();
+		// ============================
+		// EMPLOYEE SELECTION COMBO BOX
+		// ============================
 		
+		// Create a combo box to select employees
+		comboEmployees = new JComboBox<>();
 		comboEmployees.setPreferredSize(new java.awt.Dimension(120, 25));
+		
+		// Add the combo box to the top panel
 		panel.add(comboEmployees);
 		
-		// Load Employees
+		// Load all employees into the combo box
 		loadEmployeesIntoComboBox();
-		comboEmployees.setSelectedIndex(-1);
+		comboEmployees.setSelectedIndex(-1);  // No selection by default
 		
+		// ==================================
+		// CHECK OUT EQUIPMENT BUTTON SECTION
+		// ==================================
 		
-		// Checkout equipment button event handler
+		// Create "Check Out Equipment" button
 		btnCheckoutEquipment = new JButton("Check Out Equipment");
+		
+		// Add action listener to handle clicks on the checkout button
 		btnCheckoutEquipment.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
+				// Get the employee selected in the combo box
 				Employee selectedEmployee = (Employee) comboEmployees.getSelectedItem();
+				
+				// If an employee is selected, open checkout dialog
 				if (selectedEmployee != null) {
 				    openCheckoutDialog(selectedEmployee);
 				} else {
+					
+					// Show warning if no employee is selected
 				    JOptionPane.showMessageDialog(MainApp.this, "Please select an employee before checking out equipment.");
 				}
 			}
 		});
+		
+		// Add the button to the top panel
 		panel.add(btnCheckoutEquipment);
 		
+		// ===============================
+		// RETURN EQUIPMENT BUTTON SECTION
+		// ===============================
 		
-		// Return equipment button
+		// Create the "Return Equipment" button
 		btnReturnEquipment = new JButton("Return Equipment");
+		
+		// Add action listener to handle clicks on the return button
 		btnReturnEquipment.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				
+				// Get the employee selected in the combo box
 				Employee selectedEmployee = (Employee) comboEmployees.getSelectedItem();
+				
+				// Show warning if no employee is selected
 				if (selectedEmployee == null) {
 				    JOptionPane.showMessageDialog(MainApp.this, "Please select an employee before returning equipment.");
 				    return;
 				}
+				
+				// Open the return dialog for the selected employee
 				openReturnDialog(selectedEmployee);
 			}
 		});
+		
+		// Add the button to the top panel
 		panel.add(btnReturnEquipment);
 		
-		// Order button event listener
+		// ====================
+		// ORDER BUTTON SECTION
+		// ====================
+		
+		// Create the "Order" button
 		btnOrderEquipment = new JButton("Order");
+		
+		// Add action listener to handle clicks on the order button
 		btnOrderEquipment.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
+				// Get employee selected in the combo box
 				Employee selectedEmployee = (Employee) comboEmployees.getSelectedItem();
+				
+				// Show warning if no employee is selected
 				if (selectedEmployee == null) {
 					JOptionPane.showMessageDialog(MainApp.this, "Please select an employee before ordering equipment.");
 					return;
 				}
+				
+				// Open the order dialog for the selected employee
 				openOrderDialog(selectedEmployee);
 			}
 		});
+		
+		// Add the order button to the top panel
 		panel.add(btnOrderEquipment);
 		
+		// ===========================
+		// CANCEL ORDER BUTTON SECTION
+		// ===========================
 		
-		// Cancel order button
+		// Create the "Cancel" button
 		btnCancelOrder = new JButton("Cancel");
+		
+		// Add action listener to handle clicks on the cancel button
 		btnCancelOrder.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
+				// Get the selected row in the order table
 				int selectedRow = tblOrders.getSelectedRow();
+				
 			    if (selectedRow >= 0) {
-			        // Take orderID from the appropriate column
+			    	
+			        // Retrieve the orderID from the first column of the selected row
 			        int orderID = (int) tblOrders.getValueAt(selectedRow, 0);
 
+			        // Get the currently selected employee from the combo box
 			        Employee currentEmployee = (Employee) comboEmployees.getSelectedItem();
 
 			        if (currentEmployee != null) {
+			        	
+			        	// Call the cancelOrder() method of Employee and display the result
 			            String resultMSG = currentEmployee.cancelOrder(orderID);
 			            JOptionPane.showMessageDialog(MainApp.this, resultMSG);
 
-			            // Refresh table so that the change is visible
+			            // Refresh the orders table to reflect changes
 			            refreshOrdersTable();
 			   
 			        } else {
+			        	
+			        	// Warn if no employee is selected
 			            JOptionPane.showMessageDialog(MainApp.this, "Please select an employee first.");
 			        }
 			    } else {
+			    	
+			    	// Warn if no order is selected
 			        JOptionPane.showMessageDialog(MainApp.this, "Please select an order to cancel.");
 			    }
-
 			}
 		});
+		
+		// Add the cancel button to the top panel
 		panel.add(btnCancelOrder);
 		
+		// ==========================
+		// ORDER TAB LISTENER SECTION
+		// ==========================
+		
+		// Create a tabbed pane with tabs positioned at the top
 		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		
+		// Add a listener to handle tab selection changes
 		tabbedPane.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				
+				// Get the index of the selected tab
 				int selectedIndex = tabbedPane.getSelectedIndex();
+				
+				// Get the title of the selected tab
 		        String selectedTitle = tabbedPane.getTitleAt(selectedIndex);
+		        
+		        // If the "Orders" tab is selected, refresh the orders table
 		        if (selectedTitle.equals("Orders")) {
 		            fillOrdersTable();
 		        }
-
 			}
 		});
+		
+		// Add the tabbed pane to the main content pane at the center
 		contentPane.add(tabbedPane, BorderLayout.CENTER);
 
-		// ========== TRANSACTION PANEL ========== //
+		// ==== TRANSACTION PANEL SECTION ==== //
+		// Show employee transactions (top)
+		// and reminders (bottom)
+		// ================================== //
 		JPanel transactionPanel = new JPanel();
 		tabbedPane.addTab("Transactions", transactionPanel);
 		transactionPanel.setLayout(new BorderLayout());
 
+		// Split pane to separate transaction table (top) and reminders (bottom)
 		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 
 		// --- Employee Table ---
-		tblEmployee = new JTable();
+		tblEmployee = new JTable();      // Table for employee transactions
 		JScrollPane scrollTblEmployee = new JScrollPane(tblEmployee);
 		splitPane.setTopComponent(scrollTblEmployee);
 
 		// --- JTextArea Reminder ---
-		txtReminder = new JTextArea();
+		txtReminder = new JTextArea();  // Area to display reminders
 		txtReminder.setEditable(false);
-		
-		txtReminder.setFont(txtReminder.getFont().deriveFont(Font.ITALIC));
+		txtReminder.setFont(txtReminder.getFont().deriveFont(Font.ITALIC));   // Set font
 		txtReminder.setForeground(Color.gray);
-		
-		txtReminder.setBorder(BorderFactory.createTitledBorder("Reminders"));
+		txtReminder.setBorder(BorderFactory.createTitledBorder("Reminders")); // Create title
 		
 		JScrollPane scrollReminder = new JScrollPane(txtReminder);
 		splitPane.setBottomComponent(scrollReminder);
 
 		// --- Set Proportions ---
-		splitPane.setDividerLocation(300);
-		splitPane.setResizeWeight(0.7);
+		splitPane.setDividerLocation(300);  // Initial divider position
+		splitPane.setResizeWeight(0.7);     // Top components gets 70% of space
 
+		// Add split pane to transaction panel
 		transactionPanel.add(splitPane, BorderLayout.CENTER);
 
-		// ========== ORDER PANEL ========== //
+		// ===== ORDER PANEL SECTION ===== //
+		// Displays all orders in a table
+		// =============================== //
 		JPanel orderPanel = new JPanel();
 		tabbedPane.addTab("Orders", orderPanel);
 		orderPanel.setLayout(new BorderLayout());
 
+		// Scroll pane to hold the orders table
 		scrollPane_1 = new JScrollPane();
 		orderPanel.add(scrollPane_1, BorderLayout.CENTER);
 
+		// Table for displaying orders
 		tblOrders = new JTable();
-		scrollPane_1.setViewportView(tblOrders);
+		scrollPane_1.setViewportView(tblOrders);  // Attach table to scroll pane
 
-		// ========== VIEW RECORD PANEL ========== //
+		// ================ VIEW RECORD PANEL =============== //
+		// Displays individual transaction records in a table
+		// ================================================== //
 		JPanel viewRecordPanel = new JPanel();
 		viewRecordPanel.setLayout(new BorderLayout());
 		tabbedPane.addTab("View Record", viewRecordPanel);
 
+		// Table for displaying individual employee transaction records
 		tblViewRecord = new JTable();
 		JScrollPane scrollPaneViewRecord = new JScrollPane(tblViewRecord);
-		viewRecordPanel.add(scrollPaneViewRecord, BorderLayout.CENTER);
+		viewRecordPanel.add(scrollPaneViewRecord, BorderLayout.CENTER);  // Attach table to scroll panel
 		
-		// --- Export CSV Button---
+		// =========== EXPORT CSV BUTTON FOR VIEW PANEL SECTION ========= //
+		// Allows exporting the selected employee's records to a CSV file
+		// ============================================================== //
 		JButton btnExportCSV = new JButton("Export to CSV");
+		
+		// Action listener to handle button clicks
 		btnExportCSV.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// Ensures an employee is selected
+				
+				// Get the selected employee from combo box
 				Employee selectedEmployee = (Employee) comboEmployees.getSelectedItem();
+				
+				// Validate selection
 				if (selectedEmployee == null) {
 					JOptionPane.showMessageDialog(null, "Please select an employee first.");
 					return;
 				}
 
-				// Open JFileChooser to save file
+				// Open JFileChooser to select save file
 				JFileChooser fileChooser = new JFileChooser();
 				
-				// personalize dialog title with employee name
+				// Set personalized dialog title with employee name
+				// If no employee name is select or the name is null, fallback to "Employee"
 				String empName = (selectedEmployee != null && selectedEmployee.getEmpName() != null) ? selectedEmployee.getEmpName() : "Employee";
 				
+				// Filter for CSV files
 				fileChooser.setDialogTitle("Save " + empName + "'s Records CSV");
 				FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files", "csv");
 				fileChooser.setFileFilter(filter);
 
+				// Show save dialog and wait for the users action (Approve or Cancel)
 				int userSelection = fileChooser.showSaveDialog(null);
-				if (userSelection == JFileChooser.APPROVE_OPTION) {
+				if (userSelection == JFileChooser.APPROVE_OPTION) {  // User clicked "Save"
+					
+					// Get selected file
 					File fileToSave = fileChooser.getSelectedFile();
+					
+					// Get full path of the file
 					String filePath = fileToSave.getAbsolutePath();
 
-					// Add .csv extension
+					// Ensure file has .csv extension
+					// If user did not type the extension, append it automatically
 					if (!filePath.toLowerCase().endsWith(".csv")) {
 						filePath += ".csv";
 					}
 
 					try {
-						// Export contents of JTable 'View Record'
+						// Use the CSVExporter utility class to write the JTable data to a CSV file
 						CSVExporter.exportToCSV(tblViewRecord, filePath);
+						
+						// Notify the user that export was successful
 						JOptionPane.showMessageDialog(null, 
 								"Successfully exported View Record to:\n" + filePath);
 					} catch (IOException ex) {
+						
+						// Print the stack trace for debugging
 						ex.printStackTrace();
+						
+						// Notify the user that export failed
 						JOptionPane.showMessageDialog(null, 
 								"Failed to export View Record.\nError: " + ex.getMessage());
 					}
@@ -445,157 +646,235 @@ public class MainApp extends JFrame {
 			}
 
 		});
+		
+		// =================================
+		// PANEL SETUP FOR EXPORT CSV BUTTON
+		// =================================
+		
+		// Create a panel to hold the export button, aligned to the right
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		buttonPanel.add(btnExportCSV);
 		viewRecordPanel.add(buttonPanel, BorderLayout.SOUTH);
 		
-		// Calls refresh view record
+		// =========================================
+		// REFRESH VIEW RECORD ON EMPLOYEE SELECTION
+		// =========================================
+		
+		// Add action listener to the employee combo box
+		// When a different employee is selected, the View Record table updates automatically
 		comboEmployees.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-						
+
+				// Get the selected employee from the combo box
 				Employee selectedEmployee = (Employee) comboEmployees.getSelectedItem();
 				if(selectedEmployee != null) {
+					
+					// Refresh the table with the selected employee's transaction records
 					refreshViewRecordTable(selectedEmployee);
 				}
 			}
 		});
-				
-		FillTable();
 
+		// Initial population of tables
+		FillTable();
 	}
 	
-	// Populate the View Record panel
+	// =========== POPULATE VIEW RECORD TABLE ======== //
+	// Retrieves all transactions for a given employee
+	// and displays them in the JTable
+	// =============================================== //
 	private void refreshViewRecordTable(Employee emp) {
 		
-		// Calls the viewRecord() method from the Employee class to retrieve all transactions related to employees emp
+		// Get all transactions for the employee using the Employee's viewRecord() method
 		List<Transaction> transactions = emp.viewRecord();
 		
+		// If no transaction exists, notify the user
 		if(transactions.isEmpty()) {
 			JOptionPane.showMessageDialog(this, "No records are available for this employee.");
 		}
 		
+		// Define the column headers for the JTable
 		String[] columnNames = { "Transaction ID", "Equipment Name", "Borrow Date",
 								  "Expected Return Date", "Return Date", "Status", "Late" };
 		
+		// Create a new table model with the column names and no rows initially
 		DefaultTableModel model = new DefaultTableModel(columnNames, 0);
 		
-		// Use to check for late transactions
+		// Get the current date to check for overdue transactions
 		LocalDate today = LocalDate.now();
 		
+		// Iterate through each transaction to populate table rows
 		for(Transaction t : transactions) {
 			
-			// Calculate late transactions
+			// Determine if the transaction is late
 			String lateInfo = "No";
 			if(t.getTransactionStatus() == TransactionStatus.Borrowed && t.getExpectedReturnDate() != null) {
 				long daysLate = ChronoUnit.DAYS.between(t.getExpectedReturnDate(), today);
 				if(daysLate > 0 ) {
-					lateInfo = daysLate + " days";
+					lateInfo = daysLate + " days";  // Record how many days late
 				}
 			}
 			
+			// Create an Object array representing a row in the table
 			Object[] row = {
-				t.getTransactionID(),
-				t.getEquipment().getEquipmentName(),
-				t.getBorrowDate() != null ? t.getBorrowDate().toString() : "",
-				t.getExpectedReturnDate() != null ? t.getExpectedReturnDate().toString() : "",
-				t.getReturnDate() != null ? t.getReturnDate().toString() : "",
-				t.getTransactionStatus(),
-				lateInfo
+				t.getTransactionID(),                                 // Transaction ID
+				t.getEquipment().getEquipmentName(),                  // Equipment Name
+				t.getBorrowDate() != null ? t.getBorrowDate().toString() : "",  // Borrow Date
+				t.getExpectedReturnDate() != null ? t.getExpectedReturnDate().toString() : "",  // Expected Return Date
+				t.getReturnDate() != null ? t.getReturnDate().toString() : "",  // Return Date
+				t.getTransactionStatus(),                             // Transaction Status
+				lateInfo                                              // Late info
 			};
+			
+			// Add the row to the table model
 			model.addRow(row);
 		}
+		
+		// Update the JTable to display the new model
 		tblViewRecord.setModel(model);
 	}
 
-	// Order dialog is invoked after employee clicks the "Order" button
+	// ================== ORDER DIALOG METHOD ================== //
+	// This method opens a modal dialog that allows an employee
+	// to order equipment that is compatible with their skill
+	// classification. The dialog displays a table of available
+	// equipment, lets the employee select one, and confirms the
+	// order. Once confirmed, the database and Orders panel is
+	// refreshed for real-time updates.
+	// ========================================================= //
+	
+	// Order dialog is invoked after the employee clicks the "Order" button
 	private void openOrderDialog(Employee employee) {
+		
+		// Create a modal dialog with the employees name in the title
 	    JDialog dialog = new JDialog(this, "Order Equipment for " + employee.getEmpName(), true);
 	    dialog.setSize(600, 400);
 	    dialog.setLocationRelativeTo(null);
 
+	    // Table model for displaying equipment data (ID, Name, Skill Required)
 	    DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"ID", "Name", "Skill Required"}, 0);
 	    JTable table = new JTable(tableModel);
 
+	    // Establish a database connection
 	    try (Connection conn = DBConnect.getInstance().getConnection()) {
+	    	
+	    	// Retrieve a list of orderable equipment matching the employee's skill
 	        List<Equipment> equipment = EquipmentDAO.getOrderableEquipmentBySkill(conn, employee.getSkillClassification());
+	        
+	        // Add each equipment as a row in the table model
 	        for (Equipment eq : equipment) {
-	            tableModel.addRow(new Object[]{eq.getEquipmentID(), eq.getEquipmentName(), eq.getRequiredSkill()});
+	            tableModel.addRow(new Object[]{
+	            		eq.getEquipmentID(),     // Unique identifier of the equipment
+	            		eq.getEquipmentName(),   // Name of the equipment
+	            		eq.getRequiredSkill()    // Skill required to use the equipment
+	            });
 	        }
 	    } catch (SQLException ex) {
+	    	
+	    	// Log technical error
 	        ex.printStackTrace();
+	        
+	        // Inform user of failure
 	        JOptionPane.showMessageDialog(dialog, "Failed to load equipment.", "Error", JOptionPane.ERROR_MESSAGE);
 	    }
 
+	    // Confirm button to process order
 	    JButton btnConfirm = new JButton("Confirm Order");
 	    btnConfirm.addActionListener(e -> {
 	        int selectedRow = table.getSelectedRow();
 	        if (selectedRow >= 0) {
+	        	
+	        	// Get the selected equipment ID from the table
 	            int equipmentId = (int) tableModel.getValueAt(selectedRow, 0);
 	            try (Connection conn = DBConnect.getInstance().getConnection()) {
+	            	
+	            	// Retrieve the equipment object by ID
 	                Equipment equipment = EquipmentDAO.getEquipmentByID(conn, equipmentId);
+	                
+	                // Call the orderEquipment method from the Employee class to place an order
 	                String result = employee.orderEquipment(equipment);
 	                JOptionPane.showMessageDialog(dialog, result);
 	                
-	                // Refresh Order panel for real-time changes
+	                // Refresh the Orders panel to show updated data
 	                refreshOrdersTable();
 	                
+	                // Close the dialog after a successful order
 	                dialog.dispose();
 	            } catch (SQLException ex) {
 	                ex.printStackTrace();
 	            }
 	        } else {
+	        	
+	        	// Alert if no equipment is selected
 	            JOptionPane.showMessageDialog(dialog, "Please select equipment first.");
 	        }
 	    });
 
+	    // Layout configuration for dialog: table in center, confirm button at button
 	    dialog.getContentPane().setLayout(new BorderLayout());
 	    dialog.getContentPane().add(new JScrollPane(table), BorderLayout.CENTER);
 	    dialog.getContentPane().add(btnConfirm, BorderLayout.SOUTH);
+	    
+	    // Make dialog visible
 	    dialog.setVisible(true);
 	}
 
-	
-	// Employee return dialog box invoked after return button is pressed
+	// ========== EMPLOYEE RETURN DIALOG ========== //
+	// Employee return dialog box invoked after 
+	// return button is pressed. This dialog allows
+	// employees to to view all borrowed equipment
+	// and return them by selecting the equipment
+	// condition.
+	// ============================================ //
 	private void openReturnDialog(Employee employee) {
+		
+		// Create a modal dialog window to for returning equipment
+		// The title dynamically includes the employees name
 	    JDialog dialog = new JDialog(MainApp.this, "Return Equipment for " + employee.getEmpName(), true);
-	    dialog.setSize(500, 350);
-	    dialog.setLocationRelativeTo(this);
+	    dialog.setSize(500, 350);            // Set width and height
+	    dialog.setLocationRelativeTo(this);  // Center the dialog relative to the main application
 	    
-	    // Table columns
+	    // Define the table columns headers
 	    String[] columns = {"Transaction ID", "Equipment ID", "Equipment Name", "Borrow Date", "Expected Return Date"};
 	    
-	    // Find employee transactions with a borrowed status
+	    // Get only the employee's transactions that are currently Borrowed
 	    List<Transaction> borrowedTxns = employee.getEmpTransaction().stream()
 	        .filter(t -> t.getTransactionStatus() == TransactionStatus.Borrowed)
 	        .toList();
 	    
-	    // Data for table
+	    // Convert the list of borrowed transactions into a 2D array for the JTable
 	    Object[][] data = new Object[borrowedTxns.size()][columns.length];
 	    for (int i = 0; i < borrowedTxns.size(); i++) {
 	        Transaction t = borrowedTxns.get(i);
-	        data[i][0] = t.getTransactionID();
-	        data[i][1] = t.getEquipment().getEquipmentID();
-	        data[i][2] = t.getEquipment().getEquipmentName();
-	        data[i][3] = t.getBorrowDate();
-	        data[i][4] = t.getExpectedReturnDate();
+	        data[i][0] = t.getTransactionID();                   // Transaction ID
+	        data[i][1] = t.getEquipment().getEquipmentID();      // Equipment ID
+	        data[i][2] = t.getEquipment().getEquipmentName();    // Equipment Name
+	        data[i][3] = t.getBorrowDate();                      // Borrow Date
+	        data[i][4] = t.getExpectedReturnDate();              // Expected Return Date
 	    }
 	    
+	    // Create the table and enable single row selection
 	    JTable table = new JTable(data, columns);
 	    table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+	    
+	    // Add table inside a scroll panel so the data is scrollable
 	    JScrollPane scrollPane = new JScrollPane(table);
 	    
-	    // Button to confirm the return
+	    // Create a confirm button for returning equipment
 	    JButton btnConfirmReturn = new JButton("Confirm Return");
 	    btnConfirmReturn.addActionListener(e -> {
+	    	
+	    	// Check if the user has selected a row
 	        int selectedRow = table.getSelectedRow();
 	        if (selectedRow == -1) {
 	            JOptionPane.showMessageDialog(dialog, "Please select equipment to return.");
 	            return;
 	        }
 	        
+	        // Extract the transaction ID from the selected row
 	        int transactionID = (int) table.getValueAt(selectedRow, 0);
 	        
-	        // Ask employees to input the condition of the equipment when returning
+	        // Ask employees to specify the condition of the returned equipment
 	        EquipmentCondition condition = (EquipmentCondition) JOptionPane.showInputDialog(
 	            dialog,
 	            "Select condition of the equipment:",
@@ -603,88 +882,98 @@ public class MainApp extends JFrame {
 	            JOptionPane.QUESTION_MESSAGE,
 	            null,
 	            EquipmentCondition.values(),
-	            EquipmentCondition.values()[0]
+	            EquipmentCondition.values()[0]  // Default selection value
 	        );
 	        
+	        // If no condition is selected, cancel the return
 	        if (condition == null) {
 	            JOptionPane.showMessageDialog(dialog, "Return cancelled: No condition selected.");
 	            return;
 	        }
 	        
-	        // Call returnEquipment() method from Employee class
+	        // Call returnEquipment() method in Employee class
+	        // This method updates the Transaction object and Equipment object
+	        // both in memory and persists the change to the database.
 	        Transaction returnedTxn = employee.returnEquipment(transactionID, condition);
 	        
+	        // If return fails, notify the user
 	        if (returnedTxn == null) {
 	            JOptionPane.showMessageDialog(dialog, "Return failed. Equipment not found or already returned.");
 	            return;
 	        }
 	        
-	        // Troubleshoot whether data is successfully retrieved
-	        System.out.println("=== Transaction Info Before DB Update ===");
-	        System.out.println("Transaction ID: " + returnedTxn.getTransactionID());
-	        System.out.println("Transaction Status: " + returnedTxn.getTransactionStatus());
-	        System.out.println("Return Date: " + returnedTxn.getReturnDate());
-	        System.out.println("Equipment ID: " + returnedTxn.getEquipment().getEquipmentID());
-	        System.out.println("Equipment Status: " + returnedTxn.getEquipment().getStatus());
-	        System.out.println("Equipment Condition: " + returnedTxn.getEquipment().getEquipmentCondition());
-
-	        // Get connection
+	        // Perform database operations inside a try-with-resources block
 	        try (Connection conn = DBConnect.getInstance().getConnection()) {
-	            conn.setAutoCommit(false);
+	            conn.setAutoCommit(false);  // Begin transaction
 
-	            // Update transaction status to Returned
+	            // Update the transaction record in the database (e.g., set status = Returned)
 	            TransactionDAO.updateTransactionReturn(conn, returnedTxn);
 	            
-	            // Update equipment status
+	            // Update the equipment status (e.g., Loaned) based on condition
 	            EquipmentDAO.updateEquipment(conn, returnedTxn.getEquipment());
 
-	            // Commit changes to the database
+	            // Commit both updates to the database
 	            conn.commit();
 
+	            // Inform the user and close the dialog
 	            JOptionPane.showMessageDialog(dialog, "Equipment returned successfully.");
 	            dialog.dispose();
 
-	            // Refresh Transaction table
+	            // Update the Transaction panel
 	            FillTable();
 	            
-	            // Refresh View Record table
+	            // Update the View Record panel
 	            refreshViewRecordTable(employee);
 
 	        } catch (Exception ex) {
 	            ex.printStackTrace();
+	            
+	            // Show error message to user
 	            JOptionPane.showMessageDialog(dialog, "Return failed: " + ex.getMessage());
 	        }
-
 	    });
 	    
+	    // Add components into a panel (table in center, button at bottom)
 	    JPanel panel = new JPanel(new BorderLayout());
 	    panel.add(scrollPane, BorderLayout.CENTER);
 	    panel.add(btnConfirmReturn, BorderLayout.SOUTH);
 	    
+	    // Set the panel as dialog content and display it
 	    dialog.setContentPane(panel);
 	    dialog.setVisible(true);
 	}
 	
-	// Employee checkout dialog box invoked after checkout button is pressed with selected employee
+	// ================ EMPLOYEE CHECKOUT DIALOG =============== //
+	// Employee checkout dialog invoke after the checkout button
+	// is pressed. This dialog allows an employee to view all 
+	// available equipment for their skill classification and
+	// check out one piece of equipment.
+	// ========================================================= //
 	private void openCheckoutDialog(Employee employee) {
-	    // JDialog model
+		
+	    // Create a modal dialog window for equipment checkout
+		// The title dynamically includes the employee's name
 	    JDialog dialog = new JDialog(this, "Check Out Equipment for " + employee.getEmpName(), true);
-	    dialog.setSize(400, 300);
-	    dialog.setLocationRelativeTo(this);
-	    dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+	    dialog.setSize(400, 300);            // Set width and height
+	    dialog.setLocationRelativeTo(this);  // Center dialog relative to the main application
+	    dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);  // Dispose on close
 
-	    // table columns
+	    // Define the table columns for available equipment
 	    String[] columnNames = {"ID", "Name", "Condition", "Status", "Required Skill"};
 	    
-	    // Retrieve data from MySQL database
-	    // Two dimensional array used save data from equipment list
-	    // [i] = equipment whereas second [] represents column
+	    // Initialize a 2D array for JTable data
 	    Object[][] data = new Object[0][];
+	    
 	    try (Connection conn = DBConnect.getInstance().getConnection()) {
+	    	
+	    	// Retrieve all available equipment matching the employee's skill
 	    	List<Equipment> equipmentList = EquipmentDAO.getAvailableEquipmentBySkill(conn, employee.getSkillClassification());
+	    	
+	    	// Re-initialize the 2D array to the correct size based on the number of retrieved equipment
+	    	// Rows = number of equipment, Columns = 5 (ID, Name, Condition, Status, Required Skill)
 	    	data = new Object[equipmentList.size()][5];
 	    	
-	    	// Display message if no equipment is available for an employees skill
+	    	// If no equipment is available for an employees skill, show message and exit
 	    	if(equipmentList.isEmpty()) {
 	    		JOptionPane.showMessageDialog(null, 
 	    				"No available equipment for: " + employee.getSkillClassification(),
@@ -692,112 +981,142 @@ public class MainApp extends JFrame {
 	    				JOptionPane.INFORMATION_MESSAGE);
 	    		return;
 	    	}
-	    	
+	    	// Populate data array with equipment attributes for JTable
 	    	for(int i=0; i < equipmentList.size(); i++) {
 	    		Equipment eq = equipmentList.get(i);
-	    		data[i][0] = eq.getEquipmentID();
-	    		data[i][1] = eq.getEquipmentName();
-	    		data[i][2] = eq.getEquipmentCondition().name();   // name() to return enum constant
-	    		data[i][3] = eq.getStatus().name();
-	    		data[i][4] = eq.getRequiredSkill().name();
+	    		data[i][0] = eq.getEquipmentID();                 // Equipment ID
+	    		data[i][1] = eq.getEquipmentName();               // Equipment Name
+	    		data[i][2] = eq.getEquipmentCondition().name();   // Equipment Condition (enum as string)
+	    		data[i][3] = eq.getStatus().name();               // Equipment Status (enum as string)
+	    		data[i][4] = eq.getRequiredSkill().name();        // Required Skill (enum as string)
 	    	}
 	    	
 	    } catch (Exception e){
 	    	e.printStackTrace();
+	    	
+	    	// Display a failure message to the user
 	    	JOptionPane.showMessageDialog(dialog, "Failed to load equipment data");
 	    }
-
+	    
+	    // Create table with retrieved equipment data
 	    JTable table = new JTable(data, columnNames);
-	    table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-	    JScrollPane scrollPane = new JScrollPane(table);
+	    table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);  // Single selection only
+	    JScrollPane scrollPane = new JScrollPane(table);   // Make table scrollable
 
-	    // Confirm checkout button
+	    // Button to confirm checkout of selected equipment
 	    JButton btnConfirm = new JButton("Confirm Checkout");
 	    btnConfirm.addActionListener(e -> {
+	    	
+	    	// Check if row is selected
 	        int selectedRow = table.getSelectedRow();
 	        if (selectedRow == -1) {
 	            JOptionPane.showMessageDialog(dialog, "Please select an equipment to check out.");
 	            return;
 	        }
-	        // Display ID and name that is chosen
-	        int equipmentID = (int) table.getValueAt(selectedRow, 0);
-	        String equipmentName = (String) table.getValueAt(selectedRow, 1);
-	        String equipmentCondition = (String) table.getValueAt(selectedRow, 2);
-	        String equipmentStatus = (String) table.getValueAt(selectedRow, 3);
-	        String requiredSkill = (String) table.getValueAt(selectedRow, 4);
+	        // Retrieve selected equipment attributes from the table
+	        // Each column corresponds to a specific attribute of the equipment
+	        int equipmentID = (int) table.getValueAt(selectedRow, 0);              // Equipment ID
+	        String equipmentName = (String) table.getValueAt(selectedRow, 1);      // Equipment Name
+	        String equipmentCondition = (String) table.getValueAt(selectedRow, 2); // Equipment Condition (enum as string)
+	        String equipmentStatus = (String) table.getValueAt(selectedRow, 3);    // Equipment Status (enum as string)
+	        String requiredSkill = (String) table.getValueAt(selectedRow, 4);      // Required Skill (enum as string)
 	        
+	        // Create Equipment object based on selected row
+	        // Convert string representations of enums back to their respective enum constants
 	        Equipment selectedEquipment = new Equipment(
 	                equipmentID,
 	                equipmentName,
-	                EquipmentCondition.valueOf(equipmentCondition),
-	                EquipmentStatus.valueOf(equipmentStatus),
-	                SkillClassification.valueOf(requiredSkill)
+	                EquipmentCondition.valueOf(equipmentCondition),  // Convert string to enum
+	                EquipmentStatus.valueOf(equipmentStatus),        // Convert string to enum
+	                SkillClassification.valueOf(requiredSkill)       // Convert string to enum
 	            );
 	        
+	        // Safety check for null employee or equipment
 	        if (employee == null || selectedEquipment == null) {
 	            JOptionPane.showMessageDialog(dialog, "Please select both an employee and equipment.");
 	            return;
 	        }
 	        
-	        // Confirmation from employee
+	        // Ask for confirmation from employee before proceeding
 	        int confirm = JOptionPane.showConfirmDialog(dialog,
     		        "Are you sure you want to check out:\n" + equipmentName + " (ID: " + equipmentID + ")",
     		        "Confirm Checkout", JOptionPane.YES_NO_OPTION);
 	        
 	        if(confirm == JOptionPane.YES_OPTION) {
+	        	
+	        	// Call Employee's checkOut() method to create a new transaction in memory
 	        	Transaction newTxn = employee.checkOut(selectedEquipment);
 	        	
+	        	// Establish a database connection
 	        	try (Connection conn = DBConnect.getInstance().getConnection()){
-	        		conn.setAutoCommit(false);
+	        		conn.setAutoCommit(false);  // Begin transaction
 	        		
-	        		// Update equipment status to loaned after checked out
+	        		// Update equipment status to loaned in the database
 	        		String updateSQL = "UPDATE equipment SET equipStatus = 'Loaned' WHERE equipmentID = ?";
 	        		try (PreparedStatement stmtUpdate = conn.prepareStatement(updateSQL)){
 	        			stmtUpdate.setInt(1, equipmentID);
 	        			stmtUpdate.executeUpdate();  // executes statement of DML
 	        		}
 	        		
-	        		// Insert new transaction
-	        		// Records who and when equipment was checked out
-	        		String insertSQL = "INSERT INTO transaction (empID, equipmentID, borrowDate, expectedReturnDate, transactionStatus)" +
-	        		                   "VALUES (?, ?, ?, ?, ?)";
+	        		// Insert new transaction into transaction table 
+	        		// Records empID, equipmentID, borrow and expected dates, and transaction status
+	        		String insertSQL = "INSERT INTO transaction " +
+	        			    "(empID, equipmentID, borrowDate, expectedReturnDate, transactionStatus, checkoutCondition) " +
+	        			    "VALUES (?, ?, ?, ?, ?, ?)";
+
+	        		// Prepare a SQL statement to insert a new transaction into the database
+	        		// Statement.RETURN_GENERATED_KEYS allows retrieval of the auto-generated transaction ID
 	        		try (PreparedStatement stmtInsert = conn.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS)){
-	        			stmtInsert.setInt(1, newTxn.getEmployee().getEmpID());
-	        			stmtInsert.setInt(2, newTxn.getEquipment().getEquipmentID());
-	        			stmtInsert.setDate(3, newTxn.getBorrowDate() != null ? java.sql.Date.valueOf(newTxn.getBorrowDate()) : null);
-	        			stmtInsert.setDate(4, newTxn.getExpectedReturnDate() != null ? java.sql.Date.valueOf(newTxn.getExpectedReturnDate()) : null);
-	        			stmtInsert.setString(5, newTxn.getTransactionStatus().name());
+	        			
+	        			// Set parameters for the prepared statement
+	        			stmtInsert.setInt(1, newTxn.getEmployee().getEmpID());          // Employee ID
+	        			stmtInsert.setInt(2, newTxn.getEquipment().getEquipmentID());   // Equipment ID
+	        			stmtInsert.setDate(3, newTxn.getBorrowDate() != null ? java.sql.Date.valueOf(newTxn.getBorrowDate()) : null);  // Borrow Date
+	        			stmtInsert.setDate(4, newTxn.getExpectedReturnDate() != null ? java.sql.Date.valueOf(newTxn.getExpectedReturnDate()) : null);  // Expected Return Date
+	        			stmtInsert.setString(5, newTxn.getTransactionStatus().name());  // Transaction Status
+	        			stmtInsert.setString(6, newTxn.getCheckoutCondition().name());  // Checkout Condition
+	        			
+	        			// Execute the insert statement
 	        			stmtInsert.executeUpdate();
 	        			
-	        			// Take generated transactionID - Fix for TransactionID of zero after checking out equipment
+	        			// Retrieve auto-generated transaction ID from database
 	        			try(ResultSet rs = stmtInsert.getGeneratedKeys()){
+	        				
+	        				// Check if the ResultSet contains a generated key
 	        				if(rs.next()) {
+	        					
+	        					// Retrieve the auto-generated transaction ID from the first column
 	        					int generatedID = rs.getInt(1);
+	        					
+	        					// Update in-memory Transaction object with the generated transaction ID
 	        					newTxn.setTransactionID(generatedID);
 	        				}
 	        			}
-	        			
 	        		}
+	        		conn.commit();  // Commit all changes to database
 	        		
-	        		conn.commit();    // save changes to database
-	        		
+	        		// Notify user of a successful checkout
 	        		JOptionPane.showMessageDialog(dialog, "Successful checkout for: " + equipmentName);
 	        		dialog.dispose();
 	        		
-	        		// Refresh transaction table
-	        		FillTable();
-	        		
-	        		// Refresh View Record table
-		            refreshViewRecordTable(employee);
+	        		// Refresh UI tables to reflect new transaction
+	        		FillTable();        // Transaction panel
+		            refreshViewRecordTable(employee);  // View Record panel
 	        		
 	        	}catch (Exception ex) {
+	        		
+	        		// Print stack trace to the console for debugging
 	        		ex.printStackTrace();
+	        		
+	        		// Show a general error message to the user
 	        		JOptionPane.showMessageDialog(dialog, "Checkout failed. Please try again.");
+	        		
+	        		// Show a detailed error message for additional information
 	        		JOptionPane.showMessageDialog(dialog, "SQL Error: " + ex.getMessage());
 	        	}
 	        }
 	        
-	        // Selected attributes are displayed in the MessageDialog
+	        // Show detailed attributes of selected equipment for confirmation
 	        JOptionPane.showMessageDialog(dialog,
 	            "Selected Equipment:\nID: " + equipmentID + "\nName: " + equipmentName + "\n" + "Equipment Condition: "
 	            		+ equipmentCondition +"\n" + "Equipment Status: " + equipmentStatus + "\n" + "Required Skill: "
@@ -807,54 +1126,65 @@ public class MainApp extends JFrame {
 	        dialog.dispose();
 	    });
 
-	    // Adjust layout dialog
+	    // Set up the layout of the dialog using BorderLayout
 	    JPanel panel = new JPanel(new BorderLayout());
+	    
+	    // Add the scrollable table to the center of the panel
 	    panel.add(scrollPane, BorderLayout.CENTER);
+	    
+	    // Add the Confirm Checkout button to the bottom (south) of the panel
 	    panel.add(btnConfirm, BorderLayout.SOUTH);
 
+	    // Set panel as the content of the dialog
 	    dialog.setContentPane(panel);
+	    
+	    // Make the dialog visible to the user
 	    dialog.setVisible(true);
 	}
 	
-	
-	
-	// Load employees into ComboBox
+	// ============ COMBO BOX FOR EMPLOYEES ============== //
+	// Load employees from the database into the JComboBox
+	// =================================================== //
 	private void loadEmployeesIntoComboBox() {
 	    try (Connection conn = DBConnect.getInstance().getConnection()) {
-	        java.util.List<Employee> employees = EmployeeDAO.getAllEmployees(conn);
+	    	
+	    	// Retrieve a list of all employees using the EmployeeDAO
+	        List<Employee> employees = EmployeeDAO.getAllEmployees(conn);
+	        
+	        // Clear existing items from the combo box
 	        comboEmployees.removeAllItems();
+	        
+	        // Iterate through each employee and add them to the combo box
 	        for (Employee emp : employees) {
-	        	// Verify employees loaded
-	        	System.out.println("Loaded employee: " + emp);
+	        	
+	        	// Add employee to the JComboBox
 	            comboEmployees.addItem(emp);
-	            System.out.println("Employee: " + emp.getEmpName());
-	            System.out.println("Transactions:");
-	            for (Transaction t : emp.getEmpTransaction()) {
-	                System.out.println("TxnID: " + t.getTransactionID() +
-	                    ", Equipment: " + t.getEquipment().getEquipmentName() +
-	                    ", Status: " + t.getTransactionStatus());
-	            }
-	            System.out.println("-----");
 	        }
 	    } catch (Exception e) {
+	    	
+	    	// Print stack trace if an exception is thrown during database access
 	        e.printStackTrace();
 	    }
 	}
 
-	// Displays employee transactions under 'Transactions' panel 
+	// Populate the 'Transactions' JTable with all transactions from the database 
 	public void FillTable() {
 		try (Connection conn = DBConnect.getInstance().getConnection()) {
+			
+			// Retrieve all transactions from the database
 	        List<Transaction> transactions = TransactionDAO.getAllTransactions(conn);
 	        
-	       
+	        // Define column names for the JTable
 	        String[] columnNames = {
-	            "Transaction ID", "Employee Name", "Employee Skill",
-	            "Equipment Name", "Required Skill", "Equipment Condition",
-	            "Borrow Date", "Expected Return Date",
-	            "Transaction Status"
-	        };
+	        	    "Transaction ID", "Employee Name", "Employee Skill",
+	        	    "Equipment Name", "Required Skill",
+	        	    "Checkout Condition", "Return Condition",
+	        	    "Borrow Date", "Expected Return Date",
+	        	    "Transaction Status"
+	        	};
 	        
-	        // Make a two dimensional data object for JTable from list of transactions
+	        // Create a 2D Object array to hold table data
+	        // Rows = number of transactions, Columns = number of columns defined above
 	        Object[][] data = new Object[transactions.size()][columnNames.length];
 	        
 	        for (int i = 0; i < transactions.size(); i++) {
@@ -864,12 +1194,13 @@ public class MainApp extends JFrame {
 	            data[i][2] = t.getEmployee().getSkillClassification().name();
 	            data[i][3] = t.getEquipment().getEquipmentName();
 	            data[i][4] = t.getEquipment().getRequiredSkill().name();
-	            data[i][5] = t.getReturnCondition() != null
-	            				? t.getReturnCondition().name()
-	            				: t.getEquipment().getEquipmentCondition().name();
-	            data[i][6] = t.getBorrowDate();
-	            data[i][7] = t.getExpectedReturnDate();
-	            data[i][8] = t.getTransactionStatus().name();
+	            data[i][5] = t.getCheckoutCondition() != null
+	            		? t.getCheckoutCondition().name() : "N/A";
+	            data[i][6] = t.getReturnCondition() != null
+	            		? t.getReturnCondition().name() : "N/A";
+	            data[i][7] = t.getBorrowDate();
+	            data[i][8] = t.getExpectedReturnDate();
+	            data[i][9] = t.getTransactionStatus().name();
 	        }
 	        
 	        // Set new model to JTable

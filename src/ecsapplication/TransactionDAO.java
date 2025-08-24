@@ -96,15 +96,15 @@ public class TransactionDAO {
 		List<Transaction> txns = new ArrayList<>();
 
 		String strSQL = "SELECT t.transactionID, t.empID, t.equipmentID, t.orderID, t.returnDate, " +
-	            "t.borrowDate, t.expectedReturnDate, t.transactionStatus, t.returnCondition, " +
-	            "e.empName, e.skillClassification, " +
-	            "eq.equipmentName, eq.equipmentCondition, eq.equipStatus, eq.requiredSkill, " +
-	            "o.orderDate AS orderDate, o.orderStatus, o.pickUpDate " +
-	            "FROM transaction t " +
-	            "JOIN employee e ON t.empID = e.empID " +
-	            "JOIN equipment eq ON t.equipmentID = eq.equipmentID " +
-	            "LEFT JOIN `order` o ON t.orderID = o.orderID " +
-	            "ORDER BY t.transactionID ASC";
+                "t.borrowDate, t.expectedReturnDate, t.transactionStatus, t.returnCondition, t.checkoutCondition, " +
+                "e.empName, e.skillClassification, " +
+                "eq.equipmentName, eq.equipmentCondition, eq.equipStatus, eq.requiredSkill, " +
+                "o.orderDate AS orderDate, o.orderStatus, o.pickUpDate " +
+                "FROM transaction t " +
+                "JOIN employee e ON t.empID = e.empID " +
+                "JOIN equipment eq ON t.equipmentID = eq.equipmentID " +
+                "LEFT JOIN `order` o ON t.orderID = o.orderID " +
+                "ORDER BY t.transactionID ASC";
 
 	    try (PreparedStatement stmt = conn.prepareStatement(strSQL);
 	         ResultSet rs = stmt.executeQuery()) {
@@ -121,7 +121,7 @@ public class TransactionDAO {
 	            Equipment eq = new Equipment(
 	                    rs.getInt("equipmentID"),
 	                    rs.getString("equipmentName"),
-	                    EquipmentCondition.valueOf(rs.getString("equipmentCondition")), // current inventory condition
+	                    null, // current inventory condition
 	                    EquipmentStatus.valueOf(rs.getString("equipStatus")),
 	                    SkillClassification.valueOf(rs.getString("requiredSkill"))
 	            );
@@ -150,7 +150,8 @@ public class TransactionDAO {
 	                    rs.getDate("borrowDate") != null ? rs.getDate("borrowDate").toLocalDate() : null,
 	                    rs.getDate("expectedReturnDate") != null ? rs.getDate("expectedReturnDate").toLocalDate() : null,
 	                    TransactionStatus.valueOf(rs.getString("transactionStatus")),
-	                    rs.getString("returnCondition") != null ? EquipmentCondition.valueOf(rs.getString("returnCondition")) : null
+	                    rs.getString("returnCondition") != null ? EquipmentCondition.valueOf(rs.getString("returnCondition")) : null,
+	                    rs.getString("checkoutCondition") != null ? EquipmentCondition.valueOf(rs.getString("checkoutCondition")) : null
 	            );
 
 	            // Set returnDate if exists
