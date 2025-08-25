@@ -10,15 +10,17 @@
 
 package ecsapplication;
 
+// Import the entire class within java.sql
 import java.sql.*;
 
 // Singleton Pattern
 public class DBConnect {
 	
 	// Attributes
-    private static DBConnect instance;
-    private Connection connection;
+    private static DBConnect instance;  // Singular instance 
+    private Connection connection;      // Database connection object
 
+    // Database connection constants
     private static final String url = "jdbc:mysql://localhost:3306/ceis400courseproject";
     private static final String username = "root";
     private static final String password = "devry123";
@@ -28,6 +30,8 @@ public class DBConnect {
         try {
             connection = DriverManager.getConnection(url, username, password);
         } catch (SQLException e) {
+        	
+        	// If connection fails, throw an exception
             throw new SQLException("Failed to connect to the database", e);
         }
     }
@@ -36,6 +40,8 @@ public class DBConnect {
     // Synchronized prevents another thread from accessing this method
     // Singleton instance getter
     public static synchronized DBConnect getInstance() throws SQLException {
+    	
+    	// Create a new instance if one does not yet exist or if an old connection has closed
         if (instance == null || instance.getConnection().isClosed()) {
             instance = new DBConnect();
         }
@@ -46,5 +52,4 @@ public class DBConnect {
     public Connection getConnection() {
         return connection;
     }
-
 }

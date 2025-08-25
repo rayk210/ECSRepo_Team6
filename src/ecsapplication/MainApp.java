@@ -1167,7 +1167,12 @@ public class MainApp extends JFrame {
 	    }
 	}
 
-	// Populate the 'Transactions' JTable with all transactions from the database 
+	// ==================== TRANSACTIONS PANEL DATA ==================== //
+	// This method populates the 'Employee' JTable in the Transactions
+	// panel of the UI. It retrieves all transactions from the database,
+	// formats the data, and loads it into a read-only JTable, which is
+	// displayed to the user.
+	// ================================================================= //
 	public void FillTable() {
 		try (Connection conn = DBConnect.getInstance().getConnection()) {
 			
@@ -1187,91 +1192,147 @@ public class MainApp extends JFrame {
 	        // Rows = number of transactions, Columns = number of columns defined above
 	        Object[][] data = new Object[transactions.size()][columnNames.length];
 	        
+	        // Populate the data array with transaction details
 	        for (int i = 0; i < transactions.size(); i++) {
 	            Transaction t = transactions.get(i);
-	            data[i][0] = t.getTransactionID();
-	            data[i][1] = t.getEmployee().getEmpName();
-	            data[i][2] = t.getEmployee().getSkillClassification().name();
-	            data[i][3] = t.getEquipment().getEquipmentName();
-	            data[i][4] = t.getEquipment().getRequiredSkill().name();
+	            data[i][0] = t.getTransactionID();          // Column 0: Transaction ID
+	            data[i][1] = t.getEmployee().getEmpName();  // Column 1: Employee Name
+	            data[i][2] = t.getEmployee().getSkillClassification().name();  // Column 2: Employee Skill Classification
+	            data[i][3] = t.getEquipment().getEquipmentName();  // Column 3: Equipment Name
+	            data[i][4] = t.getEquipment().getRequiredSkill().name();  // Column 4: Required Skill for Equipment
+	            
+	            // If t.getCheckoutCondition() is not null, display the enum condition (e.g., Good, Damaged)
+	            // If null, display "N/A"
 	            data[i][5] = t.getCheckoutCondition() != null
-	            		? t.getCheckoutCondition().name() : "N/A";
+	            		? t.getCheckoutCondition().name() : "N/A";  // Column 5: Checkout Condition for Equipment
+	            
+	            // If t.getReturnCondition() is not null, display the enum condition
+	            // If null, display "N/A"
 	            data[i][6] = t.getReturnCondition() != null
-	            		? t.getReturnCondition().name() : "N/A";
-	            data[i][7] = t.getBorrowDate();
-	            data[i][8] = t.getExpectedReturnDate();
-	            data[i][9] = t.getTransactionStatus().name();
+	            		? t.getReturnCondition().name() : "N/A";   // Column 6: Return Condition for Equipment
+	            data[i][7] = t.getBorrowDate();               // Column 7: Borrow Date
+	            data[i][8] = t.getExpectedReturnDate();       // Column 8: Expected Return Date
+	            data[i][9] = t.getTransactionStatus().name(); // Column 9: Transaction Status (e.g., Returned, Borrowed)
 	        }
 	        
-	        // Set new model to JTable
+	        // Create a new DefaultTableModel with the populate data
 	        DefaultTableModel model = new DefaultTableModel(data, columnNames) {
 	            private static final long serialVersionUID = 1L;
 	            @Override
+	            // Make the table read-only
 	            public boolean isCellEditable(int row, int column) {
 	                return false;
 	            }
 	        };
 
+	        // Set the model into the JTable for rendering in the UI
 	        tblEmployee.setModel(model);
 
 	    } catch (Exception e) {
+	    	// Handle any error that occur during DB access or table population
 	        e.printStackTrace();
 	        System.out.println("Failed to load transactions from DB");
 	    }
 	}
 	
-	// Displays employee orders under 'Orders' panel
+	// ==================== ORDERS PANEL DATA ===================== //
+	// This method populates the 'Orders' JTable in the Orders
+	// panel of the UI. It retrieves all employee equipment orders 
+	// from the database and displays them in a read-only JTable.
+	// ============================================================ //
 	public void fillOrdersTable() {
 	    try (Connection conn = DBConnect.getInstance().getConnection()) {
+	    	
+	    	// Retrieve all orders from the database via OrderDAO
 	        List<Order> orders = OrderDAO.getAllOrders(conn);
 
-	        String[] columnNames = {"Order ID", "Employee Name", "Equipment Name", "Order Date", "Status"};
+	        // Define column names for the JTable
+	        String[] columnNames = {
+	        		"Order ID", 
+	        		"Employee Name", 
+	        		"Equipment Name", 
+	        		"Order Date", 
+	        		"Status"
+	        };
+	        
+	        // Create a 2D Object array to hold the JTable data
+	        // Row = number of orders, Columns = number of column names as defined above
 	        Object[][] data = new Object[orders.size()][columnNames.length];
 
+	        // Fill the array with data from every order
 	        for (int i = 0; i < orders.size(); i++) {
 	            Order o = orders.get(i);
-	            data[i][0] = o.getOrderID();
-	            data[i][1] = o.getEmployee().getEmpName();
-	            data[i][2] = o.getEquipment().getEquipmentName();
-	            data[i][3] = o.getOrderDate();
-	            data[i][4] = o.getOrderStatus().name();
+	            data[i][0] = o.getOrderID();                // Column 0: Order ID
+	            data[i][1] = o.getEmployee().getEmpName();  // Column 1: Employee Name
+	            data[i][2] = o.getEquipment().getEquipmentName();  // Column 2: Equipment Name
+	            data[i][3] = o.getOrderDate();              // Column 3: Order date
+	            data[i][4] = o.getOrderStatus().name();     // Column 4: Order Status (e.g., Confirmed, Cancelled)
 	        }
 
+	        // Create a DefaultTableModel from the populated data
 	        DefaultTableModel model = new DefaultTableModel(data, columnNames) {
+	        	private static final long serialVersionUID = 1L;
 	            @Override
+	            // Make the table read-only 
 	            public boolean isCellEditable(int row, int column) {
 	                return false;
 	            }
 	        };
 
+	        // Set the new table model to the Orders JTable in the Orders panel
 	        tblOrders.setModel(model);
 
 	    } catch (SQLException e) {
+	    	// Display connection or query errors
 	        e.printStackTrace();
 	    }
 	}
 	
+	// =================== REFRESH ORDERS TABLE =================== //
+    // This method refreshes the 'Orders' JTable in the Orders
+	// panel of the UI. It retrieves the latest list of orders 
+	// from the database and re-populates the table model, ensuring
+	// that the displayed data is always up-to-date.
+	// ============================================================ //
 	private void refreshOrdersTable() {
 	    try (Connection conn = DBConnect.getInstance().getConnection()) {
+	    	
+	    	// Retrieve the latest order data from the database
 	        List<Order> orders = OrderDAO.getAllOrders(conn);
 
-	        String[] columnNames = { "Order ID", "Employee", "Equipment", "Order Date", "Status", "Pickup Date" };
+	        // Define column names for the Order table
+	        String[] columnNames = { 
+	        		"Order ID", 
+	        		"Employee", 
+	        		"Equipment", 
+	        		"Order Date", 
+	        		"Status", 
+	        		"Pickup Date" 
+	        };
+	        
+	        // Create a new DefaultTableModel with the above column names and without initial rows
+	        // (The parameter 0 means start with 0 rows, later they are manually added via the addRow() method)
 	        DefaultTableModel model = new DefaultTableModel(columnNames, 0);
 
+	        // Fill the table with each order
 	        for (Order order : orders) {
 	            Object[] row = {
-	                order.getOrderID(),
-	                order.getEmployee().getEmpName(),
-	                order.getEquipment().getEquipmentName(),
-	                order.getOrderDate(),
-	                order.getOrderStatus(),
-	                order.getPickUpDate()
+	                order.getOrderID(),               // Column 0: Order ID
+	                order.getEmployee().getEmpName(), // Column 1: Employee Name
+	                order.getEquipment().getEquipmentName(),  // Column 2: Equipment Name
+	                order.getOrderDate(),             // Column 3: Order date
+	                order.getOrderStatus(),           // Column 4: Order Status
+	                order.getPickUpDate()             // Column 5: Pick Up Date
 	            };
+	            
+	            // Add rows to the table model
 	            model.addRow(row);
 	        }
 
+	        // Set the new model to the Orders JTable in the Orders panel
 	        tblOrders.setModel(model);
 	    } catch (SQLException e) {
+	    	// Handle any errors that occur during DB connection or queries
 	        e.printStackTrace();
 	        JOptionPane.showMessageDialog(this, "Failed to refresh orders.");
 	    }

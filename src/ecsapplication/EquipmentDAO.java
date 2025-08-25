@@ -1,186 +1,268 @@
 /**
  * EquipmentDAO.java
- * A class that is responsible for accessing and manipulating equipment data.
- * Follows a Data Access Object pattern to encapsulate data from the rest of the application.
+ * Data Access Object (DAO) for the Equipment entity.
+ * Handles all database operations related to Equipment,
+ * including data retrievals, status updates, and filtering
+ * by skill or availability.
  */
 
 package ecsapplication;
 
+// Imports needed for database operations
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+
+// Import need for handling SQL exceptions
 import java.sql.SQLException;
+
+// Import collection framework to work with lists
 import java.util.ArrayList;
 import java.util.List;
 
+// Import enumerations for equipment and employee skill
 import ecsapplication.enums.EquipmentCondition;
 import ecsapplication.enums.EquipmentStatus;
 import ecsapplication.enums.SkillClassification;
 
 public class EquipmentDAO {
 
-	    // Retrieves a list of all equipment name, ID, status, and the required skill needed from the equipment table in MySQL
-		public static List<Equipment> getAllEquipment(Connection conn) throws SQLException {
-		    List<Equipment> equipmentList = new ArrayList<>();
+	// ================== METHOD: getAllEquipment ================= //
+	// Retrieves a list of all equipment name, ID, status, and the 
+	// required skill needed from the equipment table in MySQL
+	// ============================================================ //
+	public static List<Equipment> getAllEquipment(Connection conn) throws SQLException {
 
-		    String query = "SELECT equipmentID, equipmentName, equipStatus, requiredSkill FROM equipment";
-		    try (PreparedStatement stmt = conn.prepareStatement(query);
-		         ResultSet rs = stmt.executeQuery()) {
+		// Initialize a dynamic equipment list to hold results
+		List<Equipment> equipmentList = new ArrayList<>();
 
-		        while (rs.next()) {
-		            int equipmentID = rs.getInt("equipmentID");
-		            String equipmentName = rs.getString("equipmentName");
-		            String statusStr = rs.getString("equipStatus");
-		            String skillStr = rs.getString("requiredSkill");
+		// SQL query to retrieve equipment attributes from the equipment table
+		String query = "SELECT equipmentID, equipmentName, equipStatus, requiredSkill FROM equipment";
+		try (PreparedStatement stmt = conn.prepareStatement(query);
+				ResultSet rs = stmt.executeQuery()) {
 
-		            EquipmentStatus status = EquipmentStatus.fromString(statusStr);
-		            SkillClassification skill = SkillClassification.fromString(skillStr);
+			while (rs.next()) {
+				int equipmentID = rs.getInt("equipmentID");            // Retrieve equipment ID
+				String equipmentName = rs.getString("equipmentName");  // Retrieve equipment name
+				String statusStr = rs.getString("equipStatus");        // Retrieve equipment status string
+				String skillStr = rs.getString("requiredSkill");       // Retrieve required skill string
 
-		            Equipment equipment = new Equipment(equipmentID, equipmentName, status, skill);
-		            equipmentList.add(equipment);
-		        }
-		    }
+				// Convert string to enums
+				EquipmentStatus status = EquipmentStatus.fromString(statusStr);
+				SkillClassification skill = SkillClassification.fromString(skillStr);
 
-		    return equipmentList;
-		}
-		
-		// Used by openCheckoutDialog method in mainapp to get available equipment by skill
-		// Retrieves a list of all equipment that currently has an ‘Available’ status and corresponds to with a certain skill classification for an employee
-		// Supports filtering equipment based on employee skills
-		public static List<Equipment> getAvailableEquipmentBySkill(Connection conn, SkillClassification skill) throws SQLException {
-		    List<Equipment> equipmentList = new ArrayList<>();
-		    // Query: join equipment with its last returned transaction (if any)
-		    // A sub-query is used to get the latest returned transaction per equipment
-		    String strSQL = """
-		        SELECT eq.equipmentID, eq.equipmentName, eq.equipStatus, eq.requiredSkill,
-		               t_last.returnCondition
-		        FROM equipment eq
-		        LEFT JOIN (
-		            SELECT t1.equipmentID, t1.returnCondition
-		            FROM transaction t1
-		            WHERE t1.transactionStatus = 'Returned'
-		              AND t1.returnCondition IS NOT NULL
-		              AND t1.transactionID = (
-		                  SELECT MAX(t2.transactionID)
-		                  FROM transaction t2
-		                  WHERE t2.equipmentID = t1.equipmentID
-		                    AND t2.transactionStatus = 'Returned'
-		              )
-		        ) AS t_last
-		          ON eq.equipmentID = t_last.equipmentID
-		        WHERE eq.equipStatus = 'Available'
-		          AND eq.requiredSkill = ?
-		        ORDER BY eq.equipmentID ASC
-		    """;
+				// Create new equipment object
+				Equipment equipment = new Equipment(equipmentID, equipmentName, status, skill);
 
-		    try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
-		        // Set the skill parameter
-		        stmt.setString(1, skill.name());
-
-		        try (ResultSet rs = stmt.executeQuery()) {
-		            while (rs.next()) {
-		                // Determine the equipment condition:
-		                // Use the last returnCondition if available, otherwise fallback to default (Good)
-		                EquipmentCondition cond = rs.getString("returnCondition") != null
-		                        ? EquipmentCondition.valueOf(rs.getString("returnCondition"))
-		                        : EquipmentCondition.Good; // default fallback
-
-		                // Create Equipment object with the correct condition
-		                Equipment eq = new Equipment(
-		                    rs.getInt("equipmentID"),
-		                    rs.getString("equipmentName"),
-		                    cond,
-		                    EquipmentStatus.valueOf(rs.getString("equipStatus")),
-		                    SkillClassification.valueOf(rs.getString("requiredSkill"))
-		                );
-
-		                // Add to the result list
-		                equipmentList.add(eq);
-		            }
-		        }
-		    }
-
-		    return equipmentList;
+				// Add equipment to the list
+				equipmentList.add(equipment);
+			}
 		}
 
-		// Used to update the availability status of equipment in the database based on equipment ID
-		// This method is invoked when employees return or checkout equipment to reflect a change in state
-		// Manages the state of equipment
-		public static void updateEquipment(Connection conn, Equipment eq) throws SQLException {
-		    String strSQL = "UPDATE equipment SET equipStatus = ?, equipmentCondition = ? WHERE equipmentID = ?";
+		// Return the equipment list
+		return equipmentList;
+	}
 
-		    try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
-		        stmt.setString(1, eq.getStatus().name());        // ENUM to string
-		        stmt.setString(2, eq.getEquipmentCondition().name());   // LocalDate to SQL date
-		        stmt.setInt(3, eq.getEquipmentID());
-		        stmt.executeUpdate();
-		    }
-		}
-		
-		// Update equipment status
-		public static boolean updateEquipmentStatus(int equipmentID, EquipmentStatus status) {
-		    String strSQL = "UPDATE equipment SET equipStatus = ? WHERE equipmentID = ?";
-		    try (Connection conn = DBConnect.getInstance().getConnection();
-		         PreparedStatement stmt = conn.prepareStatement(strSQL)) {
-		        stmt.setString(1, status.name());
-		        stmt.setInt(2, equipmentID);
-		        int affectedRows = stmt.executeUpdate();
-		        return affectedRows > 0;
-		    } catch (SQLException e) {
-		        e.printStackTrace();
-		        return false;
-		    }
-		}
-		
-		// Retrieves equipment based on equipmentID from the equipment table in MySQL
-		public static Equipment getEquipmentByID(Connection conn, int equipmentID) throws SQLException {
-		    String strSQL = "SELECT * FROM equipment WHERE equipmentID = ?";
-		    
-		    try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
-		        stmt.setInt(1, equipmentID);
-		        
-		        try (ResultSet rs = stmt.executeQuery()) {
-		            if (rs.next()) {
-		                return mapResultSetToEquipment(rs);
-		            } else {
-		                return null;
-		            }
-		        }
-		    }
-		}
-		
-		// Functions to map a ResultSet row from the equipment table to an equipment object
-				public static Equipment mapResultSetToEquipment(ResultSet rs) throws SQLException {
-				    int equipmentID = rs.getInt("equipmentID");
-				    String equipmentName = rs.getString("equipmentName");
-				    
-				    // Change string from enum in DB to enum in Java
-				    EquipmentCondition equipmentCondition = EquipmentCondition.fromString(rs.getString("equipmentCondition"));
-				    SkillClassification requiredSkill = SkillClassification.fromString(rs.getString("requiredSkill"));
-				    EquipmentStatus equipmentStatus = EquipmentStatus.fromString(rs.getString("equipStatus"));
-				    
-				    
-				    Equipment equipment = new Equipment(equipmentID, equipmentName, equipmentCondition, equipmentStatus, requiredSkill);
-				    
-				    return equipment;
+	// ===================== METHOD: getAvailableEquipmentBySkill =================== //
+	// Returns available equipment for a specific skill (used in checkout dialog for
+	// skill-based filtering.
+	// ============================================================================== //
+	public static List<Equipment> getAvailableEquipmentBySkill(Connection conn, SkillClassification skill) throws SQLException {
+
+		// Initialize a dynamic equipment list to hold results
+		List<Equipment> equipmentList = new ArrayList<>();
+
+		// SQL query to get equipment with status 'Available' filtered by required skill,
+		// including the last returned condition if available
+		String strSQL = """
+				    SELECT eq.equipmentID, 
+				           eq.equipmentName, 
+				           eq.equipStatus, 
+				           eq.requiredSkill,
+				           t_last.returnCondition
+				    FROM equipment eq
+				    LEFT JOIN (
+				        SELECT t1.equipmentID, t1.returnCondition
+				        FROM transaction t1
+				        WHERE t1.transactionStatus = 'Returned'
+				          AND t1.returnCondition IS NOT NULL
+				          AND t1.transactionID = (
+				              SELECT MAX(t2.transactionID)
+				              FROM transaction t2
+				              WHERE t2.equipmentID = t1.equipmentID
+				                AND t2.transactionStatus = 'Returned'
+				          )
+				    ) AS t_last
+				      ON eq.equipmentID = t_last.equipmentID
+				    WHERE eq.equipStatus = 'Available'
+				      AND eq.requiredSkill = ?
+				    ORDER BY eq.equipmentID ASC
+				""";
+
+		// Prepare the SQL statement using try-with-resources to ensure automatic closing
+		try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
+
+			// Bind the skill parameter to the Prepared Statement
+			stmt.setString(1, skill.name());
+
+			// Execute the query and obtain the result set
+			try (ResultSet rs = stmt.executeQuery()) {
+
+				// Iterate over each row in the result set
+				while (rs.next()) {
+					// Determine the equipment condition:
+					// Use the last returnCondition if available, otherwise fallback to default (Good)
+					EquipmentCondition cond = rs.getString("returnCondition") != null
+							? EquipmentCondition.valueOf(rs.getString("returnCondition"))
+									: EquipmentCondition.Good; // default fallback
+
+					// Create Equipment object with the retrieved data and correct condition
+					Equipment eq = new Equipment(
+							rs.getInt("equipmentID"),
+							rs.getString("equipmentName"),
+							cond,
+							EquipmentStatus.valueOf(rs.getString("equipStatus")),
+							SkillClassification.valueOf(rs.getString("requiredSkill"))
+							);
+
+					// Add the Equipment object to the list to be returned
+					equipmentList.add(eq);
 				}
+			}
+		}
+
+		// Return the list of available equipment filtered by skill
+		return equipmentList;
+	}
+
+	// ==================== METHOD: updateEquipment ====================== //
+	// Used to update the availability status of equipment in the database
+	// based on equipment ID. This method is invoked when employees return
+	// or checkout equipment to reflect a change in state.
+	// Manages the state of equipment.
+	// =================================================================== //
+	public static void updateEquipment(Connection conn, Equipment eq) throws SQLException {
+
+		// SQL statement to update equipment status and connection for a specific equipment ID
+		String strSQL = "UPDATE equipment SET equipStatus = ?, equipmentCondition = ? WHERE equipmentID = ?";
+
+		try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
+			stmt.setString(1, eq.getStatus().name());        // Convert enum to string
+			stmt.setString(2, eq.getEquipmentCondition().name()); // Convert enum to string
+			stmt.setInt(3, eq.getEquipmentID());             // Set equipment ID in the 'where' clause
+			stmt.executeUpdate();                            // Execute the update statement
+		}
+	}
+
+	// ================== METHOD: updateEquipmentStatus =============== //
+	// Updates only the status of a specific equipment in the database.
+	// Returns true if at least one row was affected, false if otherwise.
+	// ================================================================ //
+	public static boolean updateEquipmentStatus(int equipmentID, EquipmentStatus status) {
+
+		// SQL statement to update the equipment status column for a specific equipment ID
+		String strSQL = "UPDATE equipment SET equipStatus = ? WHERE equipmentID = ?";
+
+		// Try-with-resources to automatically close connection and statement
+		try (Connection conn = DBConnect.getInstance().getConnection();
+				PreparedStatement stmt = conn.prepareStatement(strSQL)) {
+
+			// Bind the new status value to the first parameter of the SQL statement
+			stmt.setString(1, status.name());
+
+			// Bind the equipment ID to the second parameter of the SQL statement
+			stmt.setInt(2, equipmentID);
+
+			// Execute the update and return true if at least one row was affected
+			int affectedRows = stmt.executeUpdate();
+			return affectedRows > 0;
+
+		} catch (SQLException e) {
+
+			// Print stack trace if a SQL error occurs and return false
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	// ==================== METHOD: getEquipmentByID ================== //
+	// Retrieves a single equipment record by its ID from the database
+	// ================================================================ //
+	public static Equipment getEquipmentByID(Connection conn, int equipmentID) throws SQLException {
+
+		// SQL query to select all columns from the equipment table for a specific equipment ID
+		String strSQL = "SELECT * FROM equipment WHERE equipmentID = ?";
+
+		// Try-with-resources ensures PreparedStatement is close automatically
+		try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
+
+			// Bind the equipment ID parameter to the query
+			stmt.setInt(1, equipmentID);
+
+			// Execute query and get result set
+			try (ResultSet rs = stmt.executeQuery()) {
+
+				// If a record exists, map it to an Equipment object
+				if (rs.next()) {
+					return mapResultSetToEquipment(rs);
+				} else {
+
+					// Return null if no equipment with the given ID exists
+					return null;
+				}
+			}
+		}
+	}
+
+	// ==================== METHOD: mapResultSetToEquipmennt ===================== //
+	// Maps a single row from the Result Set into an Equipment object
+	// =========================================================================== //
+	public static Equipment mapResultSetToEquipment(ResultSet rs) throws SQLException {
+		
+		// Get basic fields from the result set
+		int equipmentID = rs.getInt("equipmentID");
+		String equipmentName = rs.getString("equipmentName");
+
+		// Convert string values from DB into corresponding enums in Java
+		EquipmentCondition equipmentCondition = EquipmentCondition.fromString(rs.getString("equipmentCondition"));
+		SkillClassification requiredSkill = SkillClassification.fromString(rs.getString("requiredSkill"));
+		EquipmentStatus equipmentStatus = EquipmentStatus.fromString(rs.getString("equipStatus"));
+
+		// Create an Equipment object with the mapped data
+		Equipment equipment = new Equipment(equipmentID, equipmentName, equipmentCondition, equipmentStatus, requiredSkill);
+
+		// Return equipment object
+		return equipment;
+	}
+	
+	// ====================== METHOD: getOrderableEquipmentBySkill ======================= //
+	// Returns a list of equipment that can be ordered by employees based on their skill
+	// =================================================================================== //
+	public static List<Equipment> getOrderableEquipmentBySkill(Connection conn, SkillClassification skill) throws SQLException {
+		
+		// Initialize a dynamic list to hold eligible equipment
+		List<Equipment> list = new ArrayList<>();
+		
+		// SQL statement to get equipment that is available and matches the employee skill
+		String strSQL = "SELECT * FROM equipment WHERE equipStatus = 'Available' AND requiredSkill = ?";
+
+		try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
+			
+			// Bind the skill parameter to SQL statement
+			stmt.setString(1, skill.name());
+			try (ResultSet rs = stmt.executeQuery()) {      // Execute SQL statement
 				
-				// Used to filter ordering equipment by equipment status AND required skill
-				// Business rules are implemented where not all employees can order the same equipment
-				// This method functions as a safety feature
-				public static List<Equipment> getOrderableEquipmentBySkill(Connection conn, SkillClassification skill) throws SQLException {
-				    List<Equipment> list = new ArrayList<>();
-				    String strSQL = "SELECT * FROM equipment WHERE equipStatus = 'Available' AND requiredSkill = ?";
-				    
-				    try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
-				        stmt.setString(1, skill.name());
-				        try (ResultSet rs = stmt.executeQuery()) {
-				            while (rs.next()) {
-				                Equipment equipment = mapResultSetToEquipment(rs);
-				                list.add(equipment);
-				            }
-				        }
-				    }
-				    return list;
+				// Map each row to an Equipment object
+				while (rs.next()) {
+					Equipment equipment = mapResultSetToEquipment(rs);
+					
+					// Add mapped equipment objects to list
+					list.add(equipment);
 				}
+			}
+		}
+		
+		// Return filtered list of equipment
+		return list;
+	}
 }

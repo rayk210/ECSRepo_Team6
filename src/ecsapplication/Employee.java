@@ -7,52 +7,60 @@
  * to the business rules determined.
  */
 
-
+// Main package for ECS application
 package ecsapplication;
 
+// Import enumerations used by this class
 import ecsapplication.enums.SkillClassification;
 import ecsapplication.enums.TransactionStatus;
 import ecsapplication.enums.EquipmentCondition;
 import ecsapplication.enums.EquipmentStatus;
 import ecsapplication.enums.OrderStatus;
 
+// Import SQL libraries for connection and queries
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+
+// Import Java time API for date
 import java.time.LocalDate;
+
+// Import framework for lists/arrays
 import java.util.ArrayList;
 import java.util.List;
 
 public class Employee {
 
 	// Attributes
-	private int empID;
-    private String empName;
-    private SkillClassification skillClassification;
-    private List<Transaction> empTransaction;
-    private Order order;
+	private int empID;          // Unique Identifier for the employee
+    private String empName;     // Employee name
+    private SkillClassification skillClassification;  // Employee's skill classification
+    private List<Transaction> empTransaction;         // List of transactions associated with this employee
+    private Order order;        // Order associated with this employee
     
     // Constructors
     public Employee() {
     	this.empTransaction = new ArrayList<>();
     }
     
-    // Overloaded constructor
+    // Minimal constructor using empID and empName
     public Employee(int empID, String empName) {
         this.empID = empID;
         this.empName = empName;
         this.empTransaction = new ArrayList<>();
     }
     
-    // Overloaded constructor
+    // Overloaded constructor with skill classification
     public Employee(int empID, String empName, SkillClassification skillClassification) {
         this.empID = empID;
         this.empName = empName;
         this.skillClassification = skillClassification;
+        
+        // Initializes empTransactions as an empty list to avoid NullPointerExcepetion
         this.empTransaction = new ArrayList<>();
     }
     
-    // Overloaded constructor
+    // Overloaded constructor with employee transaction and order
 	public Employee(int empID, String empName, SkillClassification skillClassification,
 			List<Transaction> empTransaction, Order order) {
 		
@@ -111,7 +119,9 @@ public class Employee {
 		return order;
 	}
 	
+	// ======= CHECKOUT EQUIPMENT METHOD ======== //
 	// Enables an employee to check out equipment
+	// ========================================== //
 	public Transaction checkOut(Equipment equipment) {
 		
 		// Step 1: Get current date for borrow date
@@ -141,7 +151,9 @@ public class Employee {
 	    return transaction;
     }
 
+	// ======= ORDER EQUIPMENT METHODE ====== //
 	// Enables an employee to order equipment
+	// ====================================== //
     public String orderEquipment(Equipment equipment) {
     	
     	// Step 1: Equipment must be available
@@ -160,7 +172,7 @@ public class Employee {
             this,                   // Employee placing the order
             equipment,              // Equipment to order
             LocalDate.now(),        // Order date = today
-            OrderStatus.Confirmed   
+            OrderStatus.Confirmed   // Order Status = Confirmed
         );
         
         // Step 4: Save order to the database
@@ -173,11 +185,14 @@ public class Employee {
         } else {
             return "Failed to place order.";
         }
-
     }
     
-    // Enables an employee to cancel an order made
-    // Updates the order status to ‘Cancelled’ and set the associated equipment status to ‘Available’ so that it can be ordered or checked out again
+    // ===================== CANCEL ORDER METHOD ===================== //
+    // Enables an employee to cancel an order made.
+    // Updates the order status to ‘Cancelled’ and set the associated 
+    // equipment status to ‘Available’ so that it can be ordered or 
+    // checked out again.
+    // =============================================================== //
     public String cancelOrder(int orderID) {
         try (Connection conn = DBConnect.getInstance().getConnection()) {
         	
@@ -213,14 +228,16 @@ public class Employee {
             }
             
         } catch (SQLException e) {
-            e.printStackTrace();  // Print exception if database operation fails
+            e.printStackTrace();      // Print exception if database operation fails
             return "An error occured while cancelling the order.";
         }
     }
 
-
-    // Allows an employee to return equipment previously borrowed equipment
-    // Updates the transaction status to ‘Returned’, equipment status to ‘Available’, and equipment condition to the one chosen by the employee
+    // =========================== RETURN EQUIPMENT METHOD ========================= //
+    // Allows an employee to return equipment previously borrowed equipment.
+    // Updates the transaction status to ‘Returned’, equipment status to ‘Available’,
+    // and equipment condition to the one chosen by the employee
+    // ============================================================================= //
     public Transaction returnEquipment(int transactionID, EquipmentCondition condition) {
     	
     	// Iterates over the employee's list of transactions
@@ -246,34 +263,43 @@ public class Employee {
     			// Persist the changes to the database
     			Connection conn = null;
     			try {
+    				// Obtain a database connection through DBConnect
     			    conn = DBConnect.getInstance().getConnection();
     			    conn.setAutoCommit(false);  // start transaction
 
+    			    // Update transaction in the transaction table (e.g., update status, return date, return condition)
     			    TransactionDAO.updateTransactionReturn(conn, txn);
+    			    
+    			    // Update equipment status in the equipment table (e.g., Loaned)
     			    EquipmentDAO.updateEquipment(conn, eq);
-
-    			    conn.commit();  // save changes
+    			    
+    			    // If all updates succeeded, save changes to the database
+    			    conn.commit();
     			} catch (SQLException e) {
+    				
+    				// Print error to stack trace
     			    e.printStackTrace();
     			    if (conn != null) {
+    			    	
+    			    	// Cancel all changes if an error occurs
     			        try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
     			    }
     			} finally {
+    				// Close connection in the 'Finally' block
     			    if (conn != null) {
     			        try { conn.close(); } catch (SQLException ex) { ex.printStackTrace(); }
     			    }
     			}
-    			System.out.println("Transaction " + txn.getTransactionID() + " was successfully returned by: " + this.getEmpName());
-    			return txn;  // Return the transaction
+    			return txn;  // Return the transaction object
     		}
     	}
-    	// If no matching borrowed transaction is found
-    	System.out.println("No active transactions found for this equipment.");
         return null;
     }
 
+    // ============================== VIEW RECORD METHOD ================================ //
     // Retrieves a list of transactions associated with this employeeID from the database
     // Used for displaying individual employee's records in the "View Record" panel
+    // ==================================================================================
     public List<Transaction> viewRecord() {
         
     	// Declare a dynamic list to hold employee transactions
@@ -287,7 +313,7 @@ public class Employee {
     	}catch (SQLException e){
     		e.printStackTrace();  // Print error if database access fails
     	}
-    	return transactions;
+    	return transactions;  // Return the list of transactions
     }
     
     // Returns a string representation of the employee (ID - Name)

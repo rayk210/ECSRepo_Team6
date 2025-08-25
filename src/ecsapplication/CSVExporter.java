@@ -7,6 +7,7 @@
 
 package ecsapplication;
 
+// Imports needed to write JTable data to a CSV file and handle I/O exceptions
 import java.io.FileWriter;
 import java.io.IOException;
 import javax.swing.JTable;
@@ -59,5 +60,4 @@ public class CSVExporter {
             }
         }
     }
-
 }
