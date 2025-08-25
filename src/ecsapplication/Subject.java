@@ -13,7 +13,7 @@ public interface Subject {
 	// Add observer to the list
 	void registerObserver(Observer observer);
 	
-	// Remove observers from the list
+	// Remove observer from the list
 	void removeObserver(Observer observer);
 	
 	// Notify registered observers (Reminder) of a change in state

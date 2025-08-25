@@ -85,9 +85,14 @@ public class Reminder implements Observer{
 		generateReminder();
 		
 		// Save latest reminder to database
+		// Get a connection from the DBConnect instance
 		try (Connection conn = DBConnect.getInstance().getConnection()) {
+			
+			// Call the ReminderDAO to persist this Reminder object to the database
 	        ReminderDAO.saveReminder(this, conn);
 	    } catch (SQLException e) {
+	    	
+	    	// Print stack trace for debugging if an error occurs
 	        e.printStackTrace();
 	        System.out.println("Failed to save reminder to database");
 	    }	

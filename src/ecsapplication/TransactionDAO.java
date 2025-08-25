@@ -2,7 +2,7 @@
  * TransactionDAO.java
  * Provides methods to access and manipulate transaction data
  * in the database. It implements the Data Access Object (DAO)
- * to isolate persistence logic from the rest of the application.
+ * pattern to isolate persistence logic from the rest of the application.
  * This class interacts with the transaction table, and may join
  * related information from the employee, equipment, and order
  * tables.
@@ -67,7 +67,7 @@ public class TransactionDAO {
 
 				// Create an Equipment object using values from the result set
 				Equipment equipment = new Equipment(
-						rs.getInt("equipmentID"),   // Equipment ID
+						rs.getInt("equipmentID"),       // Equipment ID
 						rs.getString("equipmentName"),  // Equipment Name
 						EquipmentCondition.valueOf(rs.getString("equipmentCondition")),    // Equipment Condition enum
 						EquipmentStatus.valueOf(rs.getString("equipStatus")),              // Equipment Status enum
@@ -113,10 +113,16 @@ public class TransactionDAO {
 		return null;
 	}
 
-	// Is used to provide a throughout view of all transactions by joining the employee, equipment, and order tables
+	// ====================== METHOD: getAllTransactions ==================== //
+	// Retrieves all transactions along with related employees, equipment,
+	// and order details. Helps provide a complete view of system activity.
+	// ====================================================================== //
 	public static List<Transaction> getAllTransactions(Connection conn) throws SQLException {
+		
+		// Initialize a dynamic list to hold transactions from the query
 		List<Transaction> txns = new ArrayList<>();
 
+		// SQL query to retrieve all transaction data
 		String strSQL = "SELECT t.transactionID, t.empID, t.equipmentID, t.orderID, t.returnDate, " +
 				"t.borrowDate, t.expectedReturnDate, t.transactionStatus, t.returnCondition, t.checkoutCondition, " +
 				"e.empName, e.skillClassification, " +
@@ -128,52 +134,65 @@ public class TransactionDAO {
 				"LEFT JOIN `order` o ON t.orderID = o.orderID " +
 				"ORDER BY t.transactionID ASC";
 
+		// Try-with-resources ensures that rs and stmt are auto-closed
 		try (PreparedStatement stmt = conn.prepareStatement(strSQL);
 				ResultSet rs = stmt.executeQuery()) {
 
+			// Iterate through every row of the result set (1 row = 1 transaction record)
 			while (rs.next()) {
-				// Make Employee object
+				
+				// Create a new Employee object from the query results
 				Employee employee = new Employee(
 						rs.getInt("empID"),
 						rs.getString("empName"),
 						SkillClassification.valueOf(rs.getString("skillClassification"))
 						);
 
-				// Make Equipment object
+				// Create a new Equipment object
 				Equipment eq = new Equipment(
 						rs.getInt("equipmentID"),
 						rs.getString("equipmentName"),
-						null, // current inventory condition
+						null,       // Equipment condition set to null so it does not overwrite equipment conditions
 						EquipmentStatus.valueOf(rs.getString("equipStatus")),
 						SkillClassification.valueOf(rs.getString("requiredSkill"))
 						);
 
-				// Make Order object, if exists
+				// Order object is optional; default null until proven otherwise
 				Order order = null;
 				int orderID = rs.getInt("orderID");
+				
+				// Only construct Order if order ID is not null in DB
 				if (!rs.wasNull()) {
+					
+					// Convert orderDate safely: if DB column is not null, then convert to LocalDate; otherwise stay null
 					LocalDate orderDate = rs.getDate("orderDate") != null
 							? rs.getDate("orderDate").toLocalDate() : null;
+					
+					// Convert orderStatus safely: if DB column is not null, then map to Enum; otherwise stay null
 					OrderStatus orderStatus = rs.getString("orderStatus") != null
 							? OrderStatus.valueOf(rs.getString("orderStatus")) : null;
+					
+					// Convert pickUpDate safely: if DB column is not null, then convert to LocalDate; otherwise stay null
 					LocalDate pickUpDate = rs.getDate("pickUpDate") != null
 							? rs.getDate("pickUpDate").toLocalDate() : null;
 
+					// Create the Order object with relevant fields
 					order = new Order(orderID, eq, null, orderDate, orderStatus, pickUpDate, null);
 				}
 
-				// Transaction object
+				// Create a new Transaction object composed of employee, equipment, and optional order
+				// Defensive checks ensure safe conversion of DB fields to Java types
 				Transaction txn = new Transaction(
-						rs.getInt("transactionID"),
-						employee,
-						eq,
-						order,
-						rs.getDate("orderDate") != null ? rs.getDate("orderDate").toLocalDate() : null,
-						rs.getDate("borrowDate") != null ? rs.getDate("borrowDate").toLocalDate() : null,
-						rs.getDate("expectedReturnDate") != null ? rs.getDate("expectedReturnDate").toLocalDate() : null,
-						TransactionStatus.valueOf(rs.getString("transactionStatus")),
-						rs.getString("returnCondition") != null ? EquipmentCondition.valueOf(rs.getString("returnCondition")) : null,
-						rs.getString("checkoutCondition") != null ? EquipmentCondition.valueOf(rs.getString("checkoutCondition")) : null
+						rs.getInt("transactionID"),     // Transaction ID from DB
+						employee,                       // Associated Employee object
+						eq,                             // Associated Equipment object
+						order,                          // Associated Order object (may be null)
+						rs.getDate("orderDate") != null ? rs.getDate("orderDate").toLocalDate() : null,   // Convert to LocalDate if not null
+						rs.getDate("borrowDate") != null ? rs.getDate("borrowDate").toLocalDate() : null, // Borrow date (nullable)
+						rs.getDate("expectedReturnDate") != null ? rs.getDate("expectedReturnDate").toLocalDate() : null,  // Expected return date (nullable)
+						TransactionStatus.valueOf(rs.getString("transactionStatus")),                     // Transaction status
+						rs.getString("returnCondition") != null ? EquipmentCondition.valueOf(rs.getString("returnCondition")) : null,    // Return condition (nullable)
+						rs.getString("checkoutCondition") != null ? EquipmentCondition.valueOf(rs.getString("checkoutCondition")) : null // Checkout condition (nullable)
 						);
 
 				// Set returnDate if exists
@@ -181,93 +200,155 @@ public class TransactionDAO {
 					txn.setReturnDate(rs.getDate("returnDate").toLocalDate());
 				}
 
+				// Add transaction to list of transactions
 				txns.add(txn);
 			}
 		}
 
+		// Return the transactions list
 		return txns;
 	}
 
-	// Is used to update transaction status to ‘Returned’ and record the return date in the database
-	// This method is invoked when employees return equipment
+	// ==================== METHOD: updateTransactionReturn ================== //
+	// Updates a transaction marked as 'Returned' and records the return date
+	// and condition in the database. Invoked when an employee returns equipment.
+	// ======================================================================= //
 	public static void updateTransactionReturn(Connection conn, Transaction txn) throws SQLException {
+		
+		// SQL statement to update transaction status, return date, and return condition
 		String strSQL = "UPDATE transaction SET transactionStatus = ?, returnDate = ?, returnCondition = ? WHERE transactionID = ?";
 
+		// Use try-with-resources to automatically close the PreparedStatement
 		try (PreparedStatement stmt = conn.prepareStatement(strSQL)) {
+			
+			// Set the transaction status parameter (first '?')
 			stmt.setString(1, txn.getTransactionStatus().name());
+			
+			// Set the return date parameter (second '?')
+			// Date conversion for storing in DB
 			stmt.setDate(2, Date.valueOf(txn.getReturnDate()));
-			System.out.println("Updating transaction ID: " + txn.getTransactionID());
-			System.out.println("Return condition: " + txn.getReturnCondition());
+			
+			// Set the return condition parameter (third '?')
+			// If returnCondition is null, the database column will be set to null; otherwise, convert Enum to string
 			stmt.setString(3, txn.getReturnCondition() != null ? txn.getReturnCondition().name() : null);
+			
+			// Set the transaction ID parameter (fourth '?') for WHERE clause
 			stmt.setInt(4, txn.getTransactionID());
+			
+			// Execute the SQL statement
 			stmt.executeUpdate();
 		}
 	}
 
-	// Queries the database and retrieves all transactions according to the empID parameter
+	// =================== METHOD: getTransactionsByEmployeeID =================== //
+	// Queries the database and retrieves all transactions for a given employee ID.
+	// Returns a list of Transaction objects, each linked to its equipment.
+	// =========================================================================== //
 	public static List<Transaction> getTransactionsByEmployeeID(Connection conn, int empID) throws SQLException {
+		
+		// Initialize a list to store transactions
 		List<Transaction> txns = new ArrayList<>();
+		
+		// SQL query to join transaction and equipment tables, filtered by employee ID
 		String strSQL = "SELECT t.transactionID, t.empID, t.equipmentID, t.orderID, t.borrowDate, t.expectedReturnDate, t.returnDate, t.transactionStatus, " +
 				"e.equipmentName, e.equipmentCondition, e.requiredSkill, e.equipStatus " +
 				"FROM transaction t JOIN equipment e ON t.equipmentID = e.equipmentID " +
 				"WHERE t.empID = ?";
 
+		// Use try-with-resources to ensure PreparedStatement closes automatically
 		try (PreparedStatement pstmt = conn.prepareStatement(strSQL)) {
+			
+			// Set the employee ID parameter for the WHERE clause
 			pstmt.setInt(1, empID);
+			
+			// Execute the query 
 			ResultSet rs = pstmt.executeQuery();
 
+			// Iterate through each row in the result set
 			while (rs.next()) {
+				
+				// Create an Equipment object from result set
 				Equipment eq = new Equipment(
 						rs.getInt("equipmentID"),
 						rs.getString("equipmentName"),
-						EquipmentCondition.valueOf(rs.getString("equipmentCondition")),
-						EquipmentStatus.valueOf(rs.getString("equipStatus")),
-						SkillClassification.valueOf(rs.getString("requiredSkill"))
+						EquipmentCondition.valueOf(rs.getString("equipmentCondition")),  // Enum conversion
+						EquipmentStatus.valueOf(rs.getString("equipStatus")),            // Enum conversion
+						SkillClassification.valueOf(rs.getString("requiredSkill"))       // Enum conversion
 						);
 
+				// Create a Transaction object
+				// Employee and Order are null because this method only retrieves transactions by empID
 				Transaction txn = new Transaction(
 						rs.getInt("transactionID"),
-						null,
-						eq,
-						null,
-						null,
-						rs.getDate("borrowDate").toLocalDate(),
-						rs.getDate("expectedReturnDate") != null ? rs.getDate("expectedReturnDate").toLocalDate() : null,
-						TransactionStatus.valueOf(rs.getString("transactionStatus"))
+						null,      // Employee object not included here
+						eq,        // Equipment object
+						null,      // Order object not included here
+						null,      // Order data not retrieved 
+						rs.getDate("borrowDate").toLocalDate(),  // Borrow date
+						rs.getDate("expectedReturnDate") != null ? rs.getDate("expectedReturnDate").toLocalDate() : null,  // Expected return date (nullable)
+						TransactionStatus.valueOf(rs.getString("transactionStatus"))  // Enum conversion of transaction status
 						);
 
+				// Set return date if exists
 				if (rs.getDate("returnDate") != null) {
 					txn.setReturnDate(rs.getDate("returnDate").toLocalDate());
 				}
 
+				// Add transaction to list of transactions
 				txns.add(txn);
 			}
 		}
+		
+		// Return list of transactions
 		return txns;
 	}
 
-	// Retrieves a list of all employees with a Borrowed transaction status
+	// ============== METHOD: getBorrowedTransactionsByEmployee ============= //
+	// Retrieves all transactions for a given employee ID that are currently
+	// 'Borrowed'. Returns a list of Transaction objects with Employee and
+	// Equipment objects populated. 
+	// ====================================================================== //
 	public static List<Transaction> getBorrowedTransactionsByEmployee(int empID, Connection conn) throws SQLException {
+		
+		// Initialize a list to store borrowed transactions
 		List<Transaction> transactions = new ArrayList<>();
 
+		// SQL query to select all transaction for employee ID with status 'Borrowed'
 		String strSQL = "SELECT * FROM Transaction WHERE empID = ? AND transactionStatus = 'Borrowed'";
 
+		// Use try-with-resources for PreparedStatement to ensure automatic closing
 		try(PreparedStatement ps = conn.prepareStatement(strSQL)){
+			
+			// Set the employee ID parameter for the WHERE clause
 			ps.setInt(1, empID);
+			
+			// Execute the query and obtain the results
 			try(ResultSet rs = ps.executeQuery()){
+				
+				// Iterate through each row in the result set
 				while(rs.next()) {
+					
+					// Create a new Transaction object
 					Transaction t = new Transaction();
 
-					t.setTransactionID(rs.getInt("transactionID"));
-					t.setEmployee(EmployeeDAO.getEmployeeByID(conn, rs.getInt("empID")));
-					t.setEquipment(EquipmentDAO.getEquipmentByID(conn, rs.getInt("equipmentID")));
+					// Populate fields of the Transaction object
+					t.setTransactionID(rs.getInt("transactionID"));                        // Set transaction ID
+					t.setEmployee(EmployeeDAO.getEmployeeByID(conn, rs.getInt("empID")));  // Retrieve Employee object from DAO
+					t.setEquipment(EquipmentDAO.getEquipmentByID(conn, rs.getInt("equipmentID")));  // Retrieve Equipment object from DAO
+					
+					// Set expected return date
 					t.setExpectedReturnDate(rs.getDate("expectedReturnDate").toLocalDate());
+					
+					// Set transaction status
 					t.setTransactionStatus(TransactionStatus.valueOf(rs.getString("transactionStatus")));
 
+					// Add transaction to list of transactions
 					transactions.add(t);
 				}
 			}
 		}
+		
+		// Return list of borrowed transactions for the employee
 		return transactions;
 	}
 }

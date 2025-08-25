@@ -46,8 +46,12 @@ public class CSVExporter {
                     
                     // Handle special characters (commas or quotes) in CSV
                     if (cell.contains(",") || cell.contains("\"")) {
-                        cell = cell.replace("\"", "\"\"");
-                        cell = "\"" + cell + "\"";
+                    	
+                    	// Escape existing double quotes by doubling them
+                        cell = cell.replace("\"", "\"\""); 
+                        
+                        // Wrap entire cell in double quotes to preserve commas or quotes
+                        cell = "\"" + cell + "\"";         
                     }
                     csv.write(cell);  // Write the cell value
                     

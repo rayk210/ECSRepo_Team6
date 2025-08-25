@@ -232,7 +232,7 @@ public class Transaction implements Subject {
 		notifyObservers();
 	}
 	
-	// String representation of transaction object
+	// String representation of Transaction object
 	@Override
 	public String toString() {
 		return "Transaction{" +

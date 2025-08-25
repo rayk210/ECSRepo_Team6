@@ -8,21 +8,27 @@ package ecsapplication.enums;
 
 public enum EquipmentCondition {
 
-	Good,
-	Damaged,
-	Lost;
+	Good,      // Equipment is in good condition
+	Damaged,   // Equipment is damaged
+	Lost;      // Equipment is lost
 	
-	// Converts a case-insensative string to the corresponding enum condition
+	// Converts a case-insensative string to the corresponding EquipmentCondition enum
 	public static EquipmentCondition fromString(String value) {
+		
+		// If input string is null, return null
 	    if (value == null) {
 	        return null;
 	    }
+	    
+	    // Iterate through all enum constants
 	    for (EquipmentCondition ec : EquipmentCondition.values()) {
+	    	
+	    	// Compare ignoring case; return the matching enum
 	        if (ec.name().equalsIgnoreCase(value)) {
 	            return ec;
 	        }
 	    }
-	    // If no match is found
+	    // If no match is found, throw an exception
 	    throw new IllegalArgumentException("No enum constant for: " + value);
 	}
 }
