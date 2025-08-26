@@ -265,4 +265,27 @@ public class EquipmentDAO {
 		// Return filtered list of equipment
 		return list;
 	}
+	
+	// ==================== METHOD: markAllLoaned ===================== //
+	// This method sets the equipment status of all equipment of a 
+	// certain skill to 'Loaned'. Useful for preparing test conditions
+	// where no equipment is available for checkout under a given 
+	// skill classification.
+	// ================================================================ //
+	public static void markAllLoaned(Connection conn, SkillClassification skill) throws SQLException {
+		
+		// Define SQL update statement that sets equipment status to 'Loaned' for all
+		// equipment matching the required skill.
+	    String sql = "UPDATE equipment SET equipStatus = 'Loaned' WHERE requiredSkill = ?";
+	    
+	    // Create a PreparedStatement using the SQL query and the active connection
+	    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+	    	
+	    	// Bind the skill classification to the query parameter
+	        stmt.setString(1, skill.name());
+	        
+	        // Execute the update statement to apply the changes in the database
+	        stmt.executeUpdate();
+	    }
+	}
 }
