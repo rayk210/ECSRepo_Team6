@@ -186,7 +186,7 @@ public class Employee {
             return "Failed to place order.";
         }
     }
-    
+
     // ===================== CANCEL ORDER METHOD ===================== //
     // Enables an employee to cancel an order made.
     // Updates the order status to ‘Cancelled’ and set the associated 
@@ -245,6 +245,15 @@ public class Employee {
 
     		// Check that the transaction matches the given ID and is currently borrowed 
     		if (txn.getTransactionID() == transactionID && txn.getTransactionStatus() == TransactionStatus.Borrowed) {
+    			
+    			// Validate the input: if no condition is provided, 
+    			// stop processing and return null
+    			if (condition == null) {
+    			    return null;
+    			}
+
+    			// Capture today's date to be used as the return date 
+    			// for the equipment in this transaction
     			LocalDate today = LocalDate.now();
 
     			// Set return date to today and update the transaction status
@@ -254,11 +263,12 @@ public class Employee {
     			// Record the condition of the equipment in the transaction
     			txn.setReturnCondition(condition);
 
+    			// Retrieve the Equipment object associated with this transaction
+    			// so that we can update its status 
     			Equipment eq = txn.getEquipment();
     			
     			// Update equipment status to available
     			eq.setStatus(EquipmentStatus.Available);
-    			eq.setEquipmentCondition(condition);
 
     			// Persist the changes to the database
     			Connection conn = null;
@@ -290,6 +300,7 @@ public class Employee {
     			        try { conn.close(); } catch (SQLException ex) { ex.printStackTrace(); }
     			    }
     			}
+    			
     			return txn;  // Return the transaction object
     		}
     	}

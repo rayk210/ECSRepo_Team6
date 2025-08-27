@@ -78,7 +78,7 @@ public class OrderDAO {
 			return false;
 		}
 	}
-
+	
 	// ================== METHOD: getAllOrders =================== //
 	// Retrieves all order data from the database 
 	// Provides an order history and list that can be seen on the UI

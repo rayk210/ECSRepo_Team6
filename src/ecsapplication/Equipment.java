@@ -30,7 +30,14 @@ public class Equipment {
 	    this.equipmentName = equipmentName;
 	}
 	
-	// Constructor with required skill and equipment condition
+	// Constructor with required skill as an addition
+	public Equipment(int equipmentID, String equipmentName, SkillClassification requiredSkill) {
+	    this.equipmentID = equipmentID;
+	    this.equipmentName = equipmentName;
+	    this.requiredSkill = requiredSkill;
+	}
+	
+	// Constructor with equipment condition added
 	public Equipment(int equipmentID, String equipmentName, SkillClassification requiredSkill,EquipmentCondition equipmentCondition) {
 		this.equipmentID = equipmentID;
 		this.equipmentName = equipmentName;

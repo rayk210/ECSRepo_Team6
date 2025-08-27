@@ -184,7 +184,7 @@ public class EquipmentDAO {
 			return false;
 		}
 	}
-
+	
 	// ==================== METHOD: getEquipmentByID ================== //
 	// Retrieves a single equipment record by its ID from the database
 	// ================================================================ //

@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.time.LocalDate;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ecsapplication.Employee;
@@ -48,6 +49,7 @@ class ReminderTest {
 	
 	// --- Scenario 1: Testing overdue items ---
 	@Test
+	@DisplayName("Scenario 1: Over Due")
 	void testReminderOverdue() {
 		
 		// Create Equipment object for overdue test
@@ -68,6 +70,7 @@ class ReminderTest {
 	
 	// --- Scenario 2: Testing items due soon ---
 	@Test
+	@DisplayName("Scenario 2: Due Soon")
 	void testReminderReturnSoon() {
 		
 		// Create Equipment object for return soon test
@@ -89,6 +92,7 @@ class ReminderTest {
 	
 	// --- Scenario 3: Testing items requiring no immediate action ---
 	@Test
+	@DisplayName("Scenario 3: No Action")
 	void testReminderNoAction() {
 		
 		// Create equipment object for no action needed test
@@ -109,5 +113,4 @@ class ReminderTest {
 		assertEquals("No action needed for: Conduit Bender. Time left to return: " + daysLeft + " days.",
 				      reminder.getReminderMSG());
 	}
-
 }
