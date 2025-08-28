@@ -116,17 +116,19 @@ public class EquipmentDAO {
 							? EquipmentCondition.valueOf(rs.getString("returnCondition"))
 									: EquipmentCondition.Good; // default fallback
 
-					// Create Equipment object with the retrieved data and correct condition
+					// Create Equipment object using data retrieved from the result set
+					// The 'cond' variable holds the current condition of the equipment
 					Equipment eq = new Equipment(
-							rs.getInt("equipmentID"),
-							rs.getString("equipmentName"),
-							cond,
-							EquipmentStatus.valueOf(rs.getString("equipStatus")),
-							SkillClassification.valueOf(rs.getString("requiredSkill"))
-							);
+					        rs.getInt("equipmentID"),                    // Equipment ID from DB
+					        rs.getString("equipmentName"),              // Equipment name from DB
+					        cond,                                       // Equipment condition (already determined)
+					        EquipmentStatus.valueOf(rs.getString("equipStatus")), // Convert status string to enum
+					        SkillClassification.valueOf(rs.getString("requiredSkill")) // Convert skill string to enum
+					);
 
-					// Add the Equipment object to the list to be returned
+					// Add the created Equipment object to the list to be returned to the caller
 					equipmentList.add(eq);
+
 				}
 			}
 		}
@@ -182,6 +184,27 @@ public class EquipmentDAO {
 			// Print stack trace if a SQL error occurs and return false
 			e.printStackTrace();
 			return false;
+		}
+	}
+	
+	// ============== METHOD: updateEquipmentStatus ============== //
+	// Overloaded method to update the status of equipment using a 
+	// provided DB connection.
+	// =========================================================== // 
+	public static boolean updateEquipmentStatus(Connection conn, int equipmentID, EquipmentStatus equipStatus) throws SQLException {
+
+		// SQL statement to update the equipStatus column for a specific equipmentID
+		String sql = "UPDATE equipment SET equipStatus = ? WHERE equipmentID = ?";
+
+		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+			// Set the new status as string
+			pstmt.setString(1, equipStatus.name());
+
+			// Specify which equipment to update
+			pstmt.setInt(2, equipmentID);
+
+			// Execute update and return true if at least one row was affected
+			return pstmt.executeUpdate() > 0;
 		}
 	}
 	

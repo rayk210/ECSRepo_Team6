@@ -26,6 +26,13 @@ public class Order {
     
     // Constructors
     
+    // Overload constructor for testing placing orders
+    public Order(Employee employee, Equipment equipment, OrderStatus orderStatus) {
+    	this.employee = employee;
+    	this.equipment = equipment;
+    	this.orderStatus = orderStatus;
+    }
+    
     // Basic constructor without pick up date or transaction
     public Order(int orderID, Employee employee, Equipment equipment, LocalDate orderDate, OrderStatus orderStatus) {
         this.orderID = orderID;

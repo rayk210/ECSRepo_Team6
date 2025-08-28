@@ -12,7 +12,7 @@
  *    - Each row matches the transaction data that corresponds to it
  *    - No additional rows are added
  *    
- * All assertions were made using the JUnit 5 assert method
+ * Test Case Reference: TC-EXP-001-A
  */
 
 package ecsapplication.test;
@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 //Java I/O and utilities
 import java.io.*;                        // For File, FileReader, BufferedReader
+import java.nio.file.Files;
 import java.time.*;                      // For LocalDate, DateTimeFormatter
 import java.time.format.DateTimeFormatter;
 import java.util.*;                       // For List, ArrayList
@@ -137,10 +138,10 @@ class CSVExporterTest {
 		// This table will serve as the source for exporting transaction data to CSV.
 		JTable table = new JTable(new DefaultTableModel(data, columnNames));
 
-		// 3. Create temporary CSV file
-		// Specify the location where the exported CSV will be saved.
-		// NOTE: The path here is hardcoded and should be adjusted depending on the environment.
-		File tempFile = new File("C:\\Users\\rayk2\\OneDrive\\Desktop\\CEIS400\\Lab6\\transactions_export_test.csv");
+		// Step 3: Create a temporary CSV file for testing
+		// This file will be automatically deleted when the JVM exits
+		File tempFile = Files.createTempFile("transactions_export_test", ".csv").toFile();
+		tempFile.deleteOnExit(); // auto delete when JVM exits
 
 		// 4. Export to CSV file
 		// Call the CSVExporter utility method to export the contents of the JTable

@@ -13,18 +13,23 @@
  * This test ensures that Reminder.generateReminder() produces messages that accurately
  * reflect the conditions mentioned above, and that the number of days left is calculated
  * correctly. All assertions use assertEquals to confirm the expected output.
+ * 
+ * Test Case Reference: TC-REM-001-A
  */
 
 package ecsapplication.test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+// Import the LocalDate class for handling dates without time (used for borrow/return dates)
 import java.time.LocalDate;
 
+// Import JUnit annotations for setup, test, and display name
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+// ECS core classes and enumerations
 import ecsapplication.Employee;
 import ecsapplication.Equipment;
 import ecsapplication.Reminder;

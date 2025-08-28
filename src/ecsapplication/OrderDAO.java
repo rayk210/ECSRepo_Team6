@@ -79,6 +79,35 @@ public class OrderDAO {
 		}
 	}
 	
+	// ================= METHOD: insertOrder ================= //
+	// Inserts a new order into the database using a 
+	// provided connection. Overloaded to accept a Connection
+	// (for H2 tests).
+	// ======================================================= //
+	public static boolean insertOrder(Connection conn, Order order) throws SQLException {
+
+		// SQL statement to insert a new order with empID, equipmentID, orderDate, and orderStatus
+		String sql = "INSERT INTO `order` (empID, equipmentID, orderDate, orderStatus) VALUES (?, ?, ?, ?)";
+
+		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			// Set employee ID for the order
+			pstmt.setInt(1, order.getEmployee().getEmpID());
+
+			// Set equipment ID for the order
+			pstmt.setInt(2, order.getEquipment().getEquipmentID());
+
+			// Set order date; if null, use current date
+			pstmt.setDate(3, java.sql.Date.valueOf(order.getOrderDate() != null ? order.getOrderDate() : java.time.LocalDate.now()));
+
+			// Set order status as string
+			pstmt.setString(4, order.getOrderStatus().name());
+
+			// Execute insert and return true if at least one row was affected
+			return pstmt.executeUpdate() > 0;
+		}
+	}
+	
 	// ================== METHOD: getAllOrders =================== //
 	// Retrieves all order data from the database 
 	// Provides an order history and list that can be seen on the UI

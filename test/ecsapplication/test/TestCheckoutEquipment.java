@@ -1,27 +1,32 @@
 /**
  * TestCheckoutEquipment.java
- * This JUnit test case verifies the checkout process
- * for a piece of equipment in the ECS system.
- * 
- * Used to test TC-CHK-001-A
+ *
+ * This JUnit test class verifies the equipment checkout process
+ * in the ECS (Equipment Checkout System) application.
+ * It ensures that an employee with the appropriate skill classification
+ * can check out available equipment correctly, and that the transaction
+ * and equipment status are updated accordingly.
+ *
+ * Test Case Reference: TC-CHK-002-B
  */
 
 package ecsapplication.test;
 
-//Import static assertion methods from JUnit
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*; // Import static assertion methods from JUnit
 
-//Import required classes for database connection and collections
-import java.sql.Connection;
-import java.time.LocalDate;
+import java.sql.Connection;    // Provides the Connection class to establish and manage a connection to a database
+import java.sql.DriverManager; // Provides the DriverManager class to obtain a Connection to a specific database (e.g., H2)
+import java.sql.Statement;     // Provides the Statement class to execute SQL queries and updates
+import java.time.LocalDate;    // Provides the LocalDate class for handling dates without time (used for borrow/return dates)
 
-//Import JUnit annotations for setup, teardown, and test methods
+
+// Import JUnit annotations for setup, teardown, test, and display name
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-//Import ECS application classes
-import ecsapplication.DBConnect;
+// Import ECS application classes and enums
 import ecsapplication.Employee;
 import ecsapplication.Equipment;
 import ecsapplication.EquipmentDAO;
@@ -32,76 +37,129 @@ import ecsapplication.enums.TransactionStatus;
 
 class TestCheckoutEquipment {
 
-	// Database connection used for test operations
+    // Field to hold the H2 in-memory database connection
     private Connection conn;
-    
-    // Equipment object with ID 101 used as test data
-    private Equipment eq101;
 
-    // Setup method executed before each test
-    // Prepares the database by setting equipment 101 to 'Available'
+    // Setup method executed before each test case
     @BeforeEach
     void setup() throws Exception {
     	
-    	// Get a connection to the database
-        conn = DBConnect.getInstance().getConnection();
-       
-        // Retrieve equipment with ID 101 from database
-        eq101 = EquipmentDAO.getEquipmentByID(conn, 101);
-        
-        // Set the equipment status to 'Available' for testing
-        eq101.setStatus(EquipmentStatus.Available);
-        
-        // Update the equipment record in the database
-        EquipmentDAO.updateEquipment(conn, eq101);
+        // Load the H2 database driver
+        Class.forName("org.h2.Driver");
+
+        // Create an in-memory H2 database connection
+        // DB_CLOSE_DELAY=-1 keeps the database alive until the JVM shuts down
+        conn = DriverManager.getConnection("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1", "sa", "");
+        conn.setAutoCommit(false); // Disable auto-commit to allow rollback after tests
+
+        // Create a Statement for executing SQL commands
+        try (Statement stmt = conn.createStatement()) {
+
+            // Drop the equipment table if it already exists to start fresh
+            stmt.execute("DROP TABLE IF EXISTS equipment");
+
+            // Create the equipment table with relevant columns
+            stmt.execute("CREATE TABLE equipment (" +
+                    "equipmentID INT PRIMARY KEY, " +
+                    "equipmentName VARCHAR(100), " +
+                    "equipmentCondition VARCHAR(15), " +
+                    "equipStatus VARCHAR(20), " +
+                    "requiredSkill VARCHAR(50))");
+
+            // Insert initial equipment data for testing
+            stmt.execute("INSERT INTO equipment VALUES (101, 'Paint Brush', 'Good', 'Available', 'Painter')");
+            stmt.execute("INSERT INTO equipment VALUES (103, 'Saw', 'Good', 'Available', 'Plumber')");
+        }
     }
 
-    // Tear down method executed after the test
-    // Resets the equipment 101 status to 'Available' to maintain test isolation
+    // Teardown method executed after each test case
     @AfterEach
     void teardown() throws Exception {
-       
-    	// Set the equipment status back to 'Available'
-        eq101.setStatus(EquipmentStatus.Available);
-        
-        // Update the database to reflect changes
-        EquipmentDAO.updateEquipment(conn, eq101);
+        if (conn != null) {
+            conn.rollback(); // Undo all changes made during the test
+            conn.close();    // Close the database connection
+        }
     }
 
-    // Test Case: TestCheckoutEquipment
-    // Verifies that equipment can be checked out by a Painter Employee
+    // Test checkout process for a Painter employee
     @Test
-    void testCheckoutEquipment101() throws Exception {
-        
-    	// Create an Employee object for the Painter classification
-        Employee employee = new Employee(2, "Zachary", SkillClassification.Painter);
+    @DisplayName("Checkout equipment for 'Painter'")
+    void testCheckoutEquipment_Painter() throws Exception {
 
-        // Perform checkout of equipment and store the resulting transaction
-        Transaction txn = employee.checkOut(eq101);
-        
-        // Assert that a Transaction object was created successfully
+        // Retrieve equipment with ID 101 from the database
+        Equipment eq101 = EquipmentDAO.getEquipmentByID(conn, 101);
+
+        // Create an Employee object representing a Painter
+        Employee painter = new Employee(2, "Zachary", SkillClassification.Painter);
+
+        // Perform checkout and store the resulting transaction
+        Transaction txn = painter.checkOut(eq101);
+
+        // Assert that the transaction object is successfully created
         assertNotNull(txn, "Transaction should be created");
 
-        // Set the equipment status to 'Loaned' to simulate database update
+        // Set the equipment status to Loaned to simulate database update
         eq101.setStatus(EquipmentStatus.Loaned);
-        
+
         // Update the equipment status in the database
         EquipmentDAO.updateEquipment(conn, eq101);
 
-        // Retrieve the updated equipment from the database
+        // Retrieve the updated equipment from the database for verification
         Equipment refreshed = EquipmentDAO.getEquipmentByID(conn, 101);
 
-        // Verify that the equipment status is now Loaned
+        // Verify that the equipment status has changed to Loaned
         assertEquals(EquipmentStatus.Loaned, refreshed.getStatus(),
-            "Equipment 101 should change to Loaned after checkout");
+                "Equipment 101 should change to Loaned after checkout");
 
         // Verify the transaction is linked to the correct employee
-        assertEquals(employee.getEmpID(), txn.getEmployee().getEmpID(), "Transaction links to correct employee");
+        assertEquals(painter.getEmpID(), txn.getEmployee().getEmpID(), "Transaction links to correct employee");
 
         // Verify the transaction is linked to the correct equipment
         assertEquals(eq101.getEquipmentID(), txn.getEquipment().getEquipmentID(), "Transaction links to correct equipment");
 
-        // Verify that the borrow date is today
+        // Verify that the borrow date is set to today
+        assertEquals(LocalDate.now(), txn.getBorrowDate(), "Borrow date should be today");
+
+        // Verify that the transaction status is Borrowed
+        assertEquals(TransactionStatus.Borrowed, txn.getTransactionStatus(), "Transaction status should be Borrowed");
+    }
+
+    // Test checkout process for a Plumber employee
+    @Test
+    @DisplayName("Checkout equipment for 'Plumber'")
+    void testCheckoutEquipment_Plumber() throws Exception {
+
+        // Retrieve equipment with ID 103 from the database
+        Equipment eq103 = EquipmentDAO.getEquipmentByID(conn, 103);
+
+        // Create an Employee object representing a Plumber
+        Employee employee = new Employee(5, "David", SkillClassification.Plumber);
+
+        // Perform checkout and store the resulting transaction
+        Transaction txn = employee.checkOut(eq103);
+
+        // Assert that the transaction object is successfully created
+        assertNotNull(txn, "Transaction should be created");
+
+        // Set the equipment status to Loaned
+        eq103.setStatus(EquipmentStatus.Loaned);
+
+        // Update the equipment status in the database
+        EquipmentDAO.updateEquipment(conn, eq103);
+
+        // Retrieve the updated equipment for verification
+        Equipment refreshed = EquipmentDAO.getEquipmentByID(conn, 103);
+
+        // Verify that the equipment status has changed to Loaned
+        assertEquals(EquipmentStatus.Loaned, refreshed.getStatus(), "Equipment 103 should change to Loaned");
+
+        // Verify that the transaction is linked to the correct employee
+        assertEquals(employee.getEmpID(), txn.getEmployee().getEmpID(), "Transaction links to correct employee");
+
+        // Verify that the transaction is linked to the correct equipment
+        assertEquals(eq103.getEquipmentID(), txn.getEquipment().getEquipmentID(), "Transaction links to correct equipment");
+
+        // Verify that the borrow date is set to today
         assertEquals(LocalDate.now(), txn.getBorrowDate(), "Borrow date should be today");
 
         // Verify that the transaction status is Borrowed

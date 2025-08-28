@@ -42,7 +42,7 @@ class TestNoAvailableCheckoutEquipment {
 	 */
 	@BeforeEach
 	void setup() throws Exception {
-		
+
 		// Load the H2 JDBC driver class into memory
 		Class.forName("org.h2.Driver");
 
@@ -50,15 +50,15 @@ class TestNoAvailableCheckoutEquipment {
 		// DB_CLOSE_DELAY=-1 keeps the DB alive until JVM shuts down.
 		conn = DriverManager.getConnection(
 				"jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1", "sa", "");
-		
+
 		conn.setAutoCommit(true); // Enable auto-commit mode for SQL statements
 
 		// Use try-with-resources so Statement closes automatically
 		try (Statement stmt = conn.createStatement()) {
-			
+
 			// Drop the transaction table if it already exists (fresh start)
 			stmt.execute("DROP TABLE IF EXISTS transaction");
-			
+
 			// Drop the equipment table if it already exists
 			stmt.execute("DROP TABLE IF EXISTS equipment");
 
@@ -97,7 +97,7 @@ class TestNoAvailableCheckoutEquipment {
 	@Test
 	@DisplayName("No available equipment for 'Electrician'")
 	void testNoAvailableEquipment_Electrician() throws Exception {
-		
+
 		// Create an Employee with Electrician skill
 		Employee employee = new Employee(1, "Jorge", SkillClassification.Electrician);
 
