@@ -401,6 +401,33 @@ public class Employee {
 		}
 		return transactions;  // Return the list of transactions
 	}
+	
+	// ============================== VIEW RECORD OVERLOAD METHOD ============================== //
+	// Overloaded version of viewRecord that accepts a Connection object (for testing purposes)
+	// ========================================================================================= //
+	public List<Transaction> viewRecord(Connection testConn) {
+
+		// Initialize a dynamic list to store transactions retrieved from the database
+		List<Transaction> transactions = new ArrayList<>();
+
+		// Declare a Connection object; will either use the provided test connection or obtain the real DB connection
+		Connection conn = null;
+		try {
+			// If testConn is not null, use it (H2 test database); otherwise, get a connection to the real ECS database
+			conn = testConn != null ? testConn : DBConnect.getInstance().getConnection();
+
+			// Call DAO method to fetch all transactions for this employee using the connection
+			// Note: The DAO will return Transaction objects with only the Equipment and transaction fields filled
+			transactions = TransactionDAO.getTransactionsByEmployeeID(conn, this.empID);
+
+		} catch (SQLException e) {
+			// Print the stack trace if a database error occurs
+			e.printStackTrace();
+		}
+
+		// Return the list of transactions retrieved
+		return transactions;
+	}
 
 	// Returns a string representation of the employee (ID - Name)
 	@Override

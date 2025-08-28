@@ -7,7 +7,7 @@
  * can check out available equipment correctly, and that the transaction
  * and equipment status are updated accordingly.
  *
- * Test Case Reference: TC-CHK-002-B
+ * Test Case ID: TC-CHK-002-B
  */
 
 package ecsapplication.test;

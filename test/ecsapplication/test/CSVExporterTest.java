@@ -12,7 +12,7 @@
  *    - Each row matches the transaction data that corresponds to it
  *    - No additional rows are added
  *    
- * Test Case Reference: TC-EXP-001-A
+ * Test Case ID: TC-EXP-001-A
  */
 
 package ecsapplication.test;

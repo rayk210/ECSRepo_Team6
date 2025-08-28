@@ -9,7 +9,7 @@
  *   1. Successful order
  *   2. Failed order
  * 
- * Test Case Reference: TC-ORD-001-A
+ * Test Case ID: TC-ORD-001-A
  */
 
 package ecsapplication.test;

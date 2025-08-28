@@ -10,7 +10,7 @@
  * equipment status are updated correctly and that the return
  * condition is properly recorded.
  * 
- * Used for Test Case: TC-RET-001-A
+ * Test Case ID: TC-RET-001-A
  */
 
 package ecsapplication.test;

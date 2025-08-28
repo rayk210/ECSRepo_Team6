@@ -5,7 +5,7 @@
  * checkout by an employee with a certain skill
  * classification.
  *
- * Use for Test Case TC-CHK-001-A
+ * Test Case ID: TC-CHK-001-A
  */
 
 package ecsapplication.test;
