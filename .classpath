@@ -7,8 +7,8 @@
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="test"/>
-	<classpathentry kind="lib" path="C:/Users/rayk2/OneDrive/Desktop/CEIS400/MySQLConnector/mysql-connector-j-9.4.0/mysql-connector-j-9.4.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
-	<classpathentry kind="lib" path="C:/Users/rayk2/OneDrive/Desktop/CEIS400/H2/h2/bin/h2-2.3.232.jar"/>
+	<classpathentry kind="lib" path="lib/h2-2.3.232.jar"/>
+	<classpathentry kind="lib" path="lib/mysql-connector-j-9.4.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
