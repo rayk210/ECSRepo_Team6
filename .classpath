@@ -10,5 +10,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
 	<classpathentry kind="lib" path="lib/h2-2.3.232.jar"/>
 	<classpathentry kind="lib" path="lib/mysql-connector-j-9.4.0.jar"/>
+	<classpathentry kind="lib" path="lib/junit-platform-console-standalone-1.9.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
