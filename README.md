@@ -1,34 +1,81 @@
 # Equipment Checkout System (ECS)
 
+This document provides instructions for installing, configuring, executing, and testing the Equipment Checkout System (ECS). It is intended for technical and end-user reference.
+
 ## Project Description
-The **ECS system** is a Java-based desktop application that's designed to manage the lifecycle of equipment in GB manufacturing.
+The **Equipment Checkout System (ECS)** is a Java-based desktop application developed to manage the lifecycle of equipment within GB Manufacturing. It enables authorized employees to efficiently borrow, return, order, and track equipment through a centralized system.
 
-It supports the following features:
+**Core features include**:
 
--**Checkout Equipment**: Facilitates the check-out of available equipment from warehouse inventory by authorized employees.
+- **Checkout Equipment**: Allows employees to check out available equipment from warehouse inventory.
 
--**Return Equipment**: Enables employees to return previously borrowed equipment through the system. 
+- **Return Equipment**: Provides employees the ability to return previously borrowed items. 
 
--**Order Equipment**: Enables maintenance employees to order equipment required for their tasks
+- **Order Equipment**: Enables maintenance employees to request required equipment for tasks.
 
--**Receive Reminders**: Describes a user-driven process for receiving reminders about upcoming or overdue equipment return dates.
+- **Receive Reminders**: Notifies employees of upcoming or overdue equipment returns.
 
--**View Record**: Enables employees to view their personal transaction history related to equipment usage
+- **View Record**: Grants employees’ access to their transaction history and equipment usage records.
+
+## Testing Support
+
+The ECS project supports testing of all core features using JUnit 5 and an embedded H2 database, allowing each feature to be verified directly.
+
+- JUnit 5 standalone JAR (`junit-platform-console-standalone-1.9.3.jar`) is included in the `/lib` folder of the repository, so no additional JUnit installation is required.
+  
+- Embedded H2 database (`h2-2.3.232.jar`) is included in the `/lib` folder for testing purposes.
+  
+- All JUnit annotations (`@Test`, `@BeforeEach`, `@AfterEach`, `@BeforeAll`, `@AfterAll`) and assertions (`assertEquals`, `assertNotNull`, etc.) are fully supported.
+
+## Running Tests
+
+Tests can be run directly in the Eclipse IDE with the following steps:
+
+- Right-click the test case (e.g., `ReminderTest.java`)
+
+  <img width="319" height="216" alt="image" src="https://github.com/user-attachments/assets/31e252a1-176d-4bac-8487-bd52a115a450" />
+   
+- Click **Run As** JUnit Test
+
+  <img width="588" height="23" alt="image" src="https://github.com/user-attachments/assets/8ff55f6e-d27c-4154-83ec-78d8fde3e9dd" />
+
+- Results of the JUnit tests can be directly verified through the Eclipse IDE:
+
+  <img width="622" height="133" alt="image" src="https://github.com/user-attachments/assets/dbd4fe4f-4e69-4419-8df4-53326acb76d4" />
+
+## Included JUnit Test Code
+
+- **CSVExporterTest.java** – test code for **TC-EXP-001-A** (tests supported feature: `exporting` employee transaction records)
+  
+- **ReminderTest.java** – test code for **TC-REM-001-A** (tests core feature: `Receive Reminders`)
+  
+- **ReturnEquipmentTest.java** - test code for **TC-RET-001-A** (tests core feature: `Return Equipment`)
+  
+- **TestCheckoutEquipment.java** - test code for **TC-CHK-002-B** (tests core feature: `Checkout Equipment`)
+  
+- **TestNoAvailableCheckoutEquipment.java** – test code for **TC-CHK-001-A** (tests core feature: `Checkout Equipment`)
+  
+- **TestOrderEquipment.java** - test code for **TC-ORD-001-A** (tests core feature: `Order Equipment`)
+  
+- **ViewRecordTest.java** - test code for **TC-VR-001-A** (tests core feature: `View Record`)
+
 
 ## System Requirements
--Java JDK 8 or higher
 
-[Download JDK](https://www.oracle.com/java/technologies/downloads/#jdk24-windows)
+- Java JDK 8 or higher - [Download JDK](https://www.oracle.com/java/technologies/downloads/#jdk24-windows)
 
--Eclipse IDE for Java
+- Eclipse IDE for Java - [Download Eclipse IDE for Java](https://eclipseide.org/)
 
-[Download Eclipse IDE for Java](https://eclipseide.org/)
+- MySQL Workbench - [Download MySQL Workbench](https://dev.mysql.com/downloads/workbench/)
 
--MySQL Workbench
+**Libraries included in the `/lib` folder of the repository (no separate download required):**
 
-[Download MySQL Workbench](https://dev.mysql.com/downloads/workbench/)
+- `mysql-connector-j-9.4.0.jar` – MySQL connectivity
+  
+- `h2-2.3.232.jar` – embedded H2 database for testing
+  
+- `junit-platform-console-standalone-1.9.3.jar` – full JUnit 5 library for running all tests
 
--This project already contains **mysql-connector-j-9.4.0.jar** within the lib folder, so it does not need to be downloaded separately
 
 ## Obtaining the ECS Project
 
@@ -36,81 +83,72 @@ It supports the following features:
 
  1. Download ZIP file from GitHub
 
-    <img width="750" height="450" alt="image" src="https://github.com/user-attachments/assets/7d401a10-d0d0-45ff-9f9a-e16eeb27fc41" />
+    <img width="900" height="500" alt="image" src="https://github.com/user-attachments/assets/5393af01-c383-4d01-ac83-db22fffcc82d" />
 
-
- 2. Extract contents to local folder
+ 2. Extract contents a local directory.
     
- 3. The extracted folder will contain the following:
+ 3. The extracted folder will contain:
 
-    -Java source code in the **src/ecsapplication** folder
+    - Java source code in the `src/ecsapplication` folder
 
-    -SQL dump and structure in **sql/ceis400courseproject_2.sql**
+    - SQL dump and structure in `sql/ceis400courseproject_2.sql`
 
-    -JAR file in **lib/mysql-connector-j-9.4.0.jar**
+    - MySQL Connector JAR, H2 JAR, and JUnit standalone JAR in `lib/`
 
-    -JUnit test cases in **test/ecsapplication/test** folder
+    - JUnit testing code for test cases in `test/ecsapplication/test`
 
-    -.settings folder
+    - Eclipse `.settings` configuration folder
+
+ >**Note**: Ensure the ECS repository has been downloaded from GitHub and extracted so that the **ceis400courseproject_2.sql** dump file is available.
     
-## Setup Database
+## Database Setup
 
->**Note**: Ensure the ECS repository has been downloaded from GitHub and extracted so that the **ceis400courseproject_2.sql** dump file is available.
+To configure the database:
 
-1. **Start MySQL Workbench**
-   
-   -Ensure MySQL server is running.
+1. **Start** MySQL Workbench and ensure the server is running.
 
-   -Press the **plus** icon
+   - Press the **plus** icon
 
      <img width="750" height="450" alt="image" src="https://github.com/user-attachments/assets/ed169261-b57a-4dc7-8537-a1918a93c10b" />
 
-   -Setup New Connection
+2. **Create** a new connection with the following settings:
+
+   - Connection Name: ceis400courseproject
+   - Connection Method: Standard(TCP/IP)
+   - Hostname: localhost
+   - Port: 3306
+   - Username: root
+   - Password: devry123
 
      <img width="750" height="450" alt="image" src="https://github.com/user-attachments/assets/633a6028-83df-43ed-a737-27fc6bbf8e70" />
 
-     >**Note**: Enter the following:
-     >
-     >**Connection Name:** ceis400courseproject400
-     >
-     >**Connection Method:** Standard(TCP/IP)
-     >**Hostname:** localhost
-     >
-     >**Port:** 3306
-     >
-     >**Username:** root
-     >
-     >**Password:** devry123
-  
-   -Click on Project:
+3. **Click** on Project:
    
      <img width="549" height="335" alt="image" src="https://github.com/user-attachments/assets/24869211-4fb6-4bea-8cd7-13202ebb84a0" />
 
-   -Click on the folder SQL button:
+4. **Click** the Open SQL Script (folder icon) button:
 
      <img width="81" height="92" alt="image" src="https://github.com/user-attachments/assets/949cd578-7d8a-47e9-ab91-9fd968882508" />
 
-   -Select the .SQL dump file **ceis400courseproject_2.sql** in the unzipped file from GitHub:
+5. **Select** the .SQL dump file **ceis400courseproject_2.sql** from the unzipped GitHub project:
 
      <img width="750" height="450" alt="image" src="https://github.com/user-attachments/assets/07534bb2-baff-4745-b810-1886472b3ffa" />
+     
+     **Note:** The SQL dump already contains the `CREATE DATABASE` and `USE` commands, so manual creation is not required
 
-   -Add this piece of code to the top at line 1:
-   
-     CREATE DATABASE IF NOT EXISTS ceis400courseproject;
-   
-     USE ceis400courseproject;
+6. **Click** the `Execute` (lightning bolt) button to run the script:
 
-   -Select lightning bolt icon to execute query:
+   <img width="942" height="226" alt="image" src="https://github.com/user-attachments/assets/06a7afc3-84a6-4f02-8958-1160379d819d" />
 
-     <img width="77" height="69" alt="image" src="https://github.com/user-attachments/assets/0f6b701b-3ee1-4dd4-8009-95bbc3c35148" />
+7. **Click** the `Refresh Schemas` (circular arrows) icon in the Navigator panel (left-hand side) to reload schemas:
 
-   -Click on schemas and the rotating errors to reload.
+   <img width="430" height="235" alt="image" src="https://github.com/user-attachments/assets/edb2f5fe-802c-4361-9e5f-154c89296a59" />
 
-     <img width="400" height="300" alt="image" src="https://github.com/user-attachments/assets/3dd84dd0-8dad-4821-b1b0-4ac479105292" />
+   **Note:** The circular arrows are located to the right of `SCHEMAS`.
 
-   -Right click and set **ceis400courseproject** as **Default Schema**
+8. **Right-click** the **ceis400courseproject** and select **Set as Default Schema**
 
-     <img width="450" height="300" alt="image" src="https://github.com/user-attachments/assets/1e9f3449-419a-47e2-b013-fdda45e7c9ae" />
+   <img width="516" height="111" alt="image" src="https://github.com/user-attachments/assets/f06da57f-cada-45a4-ac1d-e8e420e5c433" />
 
 2. **Verify Database Tables**
 
@@ -129,7 +167,7 @@ It supports the following features:
    
    SELECT * FROM reminder LIMIT 5;
 
-   >**Note**: **order** must be enclosed in backquotes **``**
+   >**Note**: **order** must be enclosed in backquotes **(``)**
 
    <img width="627" height="461" alt="image" src="https://github.com/user-attachments/assets/3a009040-d57a-4f88-b06b-e09adea5bb95" />
 
@@ -137,26 +175,31 @@ It supports the following features:
 
 ### 1. Open Project in Eclipse IDE
 
-  -Launch Eclipse IDE
+  - Launch Eclipse IDE
 
-  -Navigate to **File** --> **Import** --> **Existing Projects into Workspace**
+  - Navigate to **File** --> **Import** --> **Existing Projects into Workspace**
 
   <img width="550" height="500" alt="image" src="https://github.com/user-attachments/assets/3246561b-8e4e-4d21-ae99-f7e5b87654e1" />
 
-  -Select the ECS project folder that was extracted before
+  - Select the ECS project folder that was extracted before
 
   <img width="550" height="700" alt="image" src="https://github.com/user-attachments/assets/9bd2f33d-b16f-4981-b6dc-e254cd43c555" />
   
-  -Ensure **lib** folder contains **mysql-connector-j-9.4.0.jar**
+  - Verify that the following JAR files are present in the `lib` directory:
 
-  <img width="404" height="160" alt="image" src="https://github.com/user-attachments/assets/480baffc-0dc1-4842-bfc3-93b55660cd8d" />
-
+    - `h2-2.3.232.jar`: embedded H2 database used for testing
+   
+    - `mysql-connector-j-9.4.0.jar`: MySQL connectivity
+   
+    - `lib/junit-platform-console-standalone-1.9.3.jar`: full JUnit 5 library for running all tests
+   
+      <img width="390" height="240" alt="image" src="https://github.com/user-attachments/assets/cb8e5699-84d6-423b-8cec-b34507eef3f4" />
 
 ### 2. Configure Database Connection
 
-  -Open the **DBConnect.java** file
+  - Open the **DBConnect.java** file
 
-  -Ensure that the JDBC url, username, and password match your MySQL setup done in the **Setup Database** part above:
+  - Ensure that the JDBC url, username, and password match your MySQL setup done in the **Setup Database** part above:
   
     private static final String url = "jdbc:mysql://localhost:3306/ceis400courseproject";
     
