@@ -191,7 +191,7 @@ To configure the database:
    
     - `mysql-connector-j-9.4.0.jar`: MySQL connectivity
    
-    - `lib/junit-platform-console-standalone-1.9.3.jar`: full JUnit 5 library for running all tests
+    - `junit-platform-console-standalone-1.9.3.jar`: full JUnit 5 library for running all tests
    
       <img width="390" height="240" alt="image" src="https://github.com/user-attachments/assets/cb8e5699-84d6-423b-8cec-b34507eef3f4" />
 
