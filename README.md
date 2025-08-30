@@ -90,7 +90,7 @@ Tests can be run directly in the Eclipse IDE with the following steps:
 
     <img width="900" height="500" alt="image" src="https://github.com/user-attachments/assets/5393af01-c383-4d01-ac83-db22fffcc82d" />
 
- 2. Extract contents a local directory.
+ 2. Extract contents to a local directory.
     
  3. The extracted folder will contain:
 
