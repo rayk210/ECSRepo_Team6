@@ -43,6 +43,11 @@ Tests can be run directly in the Eclipse IDE with the following steps:
 
   <img width="622" height="133" alt="image" src="https://github.com/user-attachments/assets/dbd4fe4f-4e69-4419-8df4-53326acb76d4" />
 
+- The H2 database will initialize automatically in memory.
+  
+  - No manual schema creation is required; the test setup creates and populates tables before each run.
+
+
 ## Included JUnit Test Code
 
 - **CSVExporterTest.java** – test code for **TC-EXP-001-A** (tests supported feature: `exporting` employee transaction records)
