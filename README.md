@@ -27,6 +27,8 @@ The ECS project supports testing of all core features using JUnit 5 and an embed
   
 - All JUnit annotations (`@Test`, `@BeforeEach`, `@AfterEach`, `@BeforeAll`, `@AfterAll`) and assertions (`assertEquals`, `assertNotNull`, etc.) are fully supported.
 
+- Testing code located in the `test/ecsapplication/test` folder of the GitHub repository.
+
 ## Running Tests
 
 Tests can be run directly in the Eclipse IDE with the following steps:
@@ -49,6 +51,8 @@ Tests can be run directly in the Eclipse IDE with the following steps:
 
 
 ## Included JUnit Test Code
+
+The following displays the ECS system testing code, which can be found in the `test/ecsapplication/test` folder of the GitHub repository:
 
 - **CSVExporterTest.java** – test code for **TC-EXP-001-A** (tests supported feature: `exporting` employee transaction records)
   
